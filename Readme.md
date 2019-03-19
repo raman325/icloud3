@@ -99,7 +99,7 @@ iCloud3 has many features not in the base iCloud device_tracker that is part of 
 | ● Service Calls | 4 | 4 + 12 special commands |
 | ● Lines of code | 425 | 4000+ |
 
-*[Top](https://github.com/gcobb321/icloud3#table-of-contents)**
+*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
 ### How it works
 
@@ -154,7 +154,7 @@ Note: Special characters (’-’) get mapped to ‘_’ by HA and must be accou
 I could have set the iPhone name to Gary_iPhone but didn’t
 ```
 
-
+*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
 ### Home Assistant Configuration
 
@@ -189,7 +189,7 @@ device_tracker:
     include_device: lillian_iphone
 ```
 
-
+*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
 ### About Your Apple iCloud Account
 
