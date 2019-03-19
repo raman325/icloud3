@@ -70,7 +70,7 @@ iCloud3 uses the GitHub Releases framework to download all the necessary install
 
 *Note:* The WazeRouteCalculator component is use to calculate driving distance and time from your location to your Home zone. Normally, it is installed with the Home Assistant and Hass.io frameworks. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and instal Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from Home. Add the `distance_method: calc` parameter to your device_tracker: icloud3 configuration setup (see more information on this and other parameters later).
 
-
+[Top](https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### What's different
 
@@ -826,4 +826,3 @@ icloud_command_info_logging_toggle:
         command: info logging
 ```
 
-[Top](https://github.com/gcobb321/icloud3#table-of-contents)
