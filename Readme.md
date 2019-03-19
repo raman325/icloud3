@@ -826,3 +826,4 @@ icloud_command_info_logging_toggle:
         command: info logging
 ```
 
+[Top](https://github.com/gcobb321/icloud3#table-of-contents)
