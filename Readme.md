@@ -515,7 +515,7 @@ The 'badge' sensor is used to display either the zone or distance from home for 
       entity_picture_template: /local/lillian.png
 ```
 
-![badge](screenshots\Badge.jpg)
+![badge](screenshots/Badge.jpg)
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
@@ -827,7 +827,7 @@ You have to have the *Logger: info* entry in the *configuration.yaml* file but y
 
 This entry was triggered by a Zone/State change from 'not_home' to 'home'.
 
-![](screenshots\SampleLog.jpg)
+![](screenshots/SampleLog.jpg)
 
 
 
