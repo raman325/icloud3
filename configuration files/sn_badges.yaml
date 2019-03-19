@@ -5,34 +5,15 @@
 #########################################################
 - platform: template
   sensors:
-    #--- Gary/Lillian location badge --------------------
-    gary_badge:
-      value_template: >-
-        {% if states("device_tracker.gary_iphone") %}
-          {% if states("device_tracker.gary_iphone") != "not_home" %}
-            {{ states("device_tracker.gary_iphone") | title }}
-          {% elif state_attr("device_tracker.gary_iphone","distance") %}
-            {{ state_attr("device_tracker.gary_iphone","distance") }} mi
-          {% else %}
-            Waiting
-          {% endif %} 
-        {% endif %}            
+  
+  
+#--- Gary location badge --------------------
+    gary_iphone_badge:  
+      friendly_name: Gary
+      value_template: ''
       entity_picture_template: /local/gary.png
-
-    lillian_badge:
-      value_template: >-
-        {% if states("device_tracker.lillian_iphone") %}
-          {% if states("device_tracker.lillian_iphone") != "not_home" %}
-            {{ states("device_tracker.lillian_iphone") | title }}
-          {% elif state_attr("device_tracker.lillian_iphone","distance") %}
-            {{ state_attr("device_tracker.lillian_iphone","distance") }} mi
-          {% else %}
-            Waiting
-          {% endif %}
-        {% endif %}  
-      entity_picture_template: /local/lillian.png
-
-  #--- Garage Door Open/Closed --------------------
+      
+#--- Garage Door Open/Closed --------------------
     garage_door_badge:
       value_template: >-
         {{states.sensor.garage_door.state}} 
@@ -56,21 +37,3 @@
           /local/hot-water-heater-off.png
         {% endif %}
               
-
-#---- Day of Week Templates --------------------
-- platform: template
-  sensors:
-    day_of_week:
-      value_template: >
-        {{ now().strftime("%a") }}
-      entity_id:
-        - sensor.day_of_week
- 
-- platform: template
-  sensors:
-    day_date:
-      value_template: >
-        {{ now().strftime("%A, %b %d, %Y") }}
-      entity_id:
-        - sensor.day_date
-

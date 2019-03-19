@@ -4,17 +4,23 @@
 #
 #########################################################
 
-
 #--------------------------------------------------------------
 #   GENERAL ICLOUD COMMANDS
 #-------------------------------------------------------------
-icloud_command_reset:
-  alias: 'Reset iCloud'
+icloud_command_restart:
+  alias: 'Restart iCloud'
   sequence:
     - service: device_tracker.icloud_update
       data:
         account_name: gary_icloud
-        command: reset
+        command: restart
+        
+icloud_restart_service:
+  alias: 'Restart iCloud Service'
+  sequence:
+    - service: device_tracker.icloud_restart
+      data:
+        account_name: gary_icloud
 
 icloud_command_pause_resume_polling:
   alias: 'Toggle Pause/Resume Polling'
@@ -105,8 +111,8 @@ icloud_command_resume_polling_gary:
     - service: device_tracker.icloud_update
       data:
         account_name: gary_icloud
-        device_name: gary_iphone
-        command: resume
+        device_name:  gary_iphone
+        command:      resume
         
 icloud_command_pause_polling_gary:
   alias: 'Pause (Gary)'
@@ -114,39 +120,46 @@ icloud_command_pause_polling_gary:
     - service: device_tracker.icloud_update
       data:
         account_name: gary_icloud
-        device_name: gary_iphone
-        command: pause
+        device_name:  gary_iphone
+        command:      pause
               
-icloud_set_interval_15_sec_gary:
-  alias: 'Set interval to 15 sec (Gary)'
+icloud_set_interval_10_min_gary:
+  alias: 'Set interval to 10 min (Gary)'
   sequence:
     - service: device_tracker.icloud_set_interval
       data:
         account_name: gary_icloud
-        device_name: gary_iphone
-        interval: '15 sec'
+        device_name:  gary_iphone
+        interval:    '10 min'
 
-icloud_set_interval_1_min_gary:
+icloud_set_interval_2_min_gary:
   alias: 'Set interval to 1 min (Gary)'
   sequence:
     - service: device_tracker.icloud_set_interval
       data:
         account_name: gary_icloud
-        device_name: gary_iphone
-        interval: 1
+        device_name:  gary_iphone
+        interval:    '1 min'
+        
+icloud_lost_iphone_gary:
+  alias: 'Find Lost Phone Alert (Gary)'
+  sequence:
+    - service: device_tracker.icloud_lost_iphone
+      data:
+        account_name: gary_icloud
+        device_name:  gary_iphone
 
 #--------------------------------------------------------------
 #   ZONE COMMANDS
 #--------------------------------------------------------------
-
 icloud_command_gary_iphone_zone_home:
   alias: 'Set Zone Home (Gary)'
   sequence:
     - service: device_tracker.icloud_update
       data:
         account_name: gary_icloud
-        device_name: gary_iphone
-        command: 'zone home'
+        device_name:  gary_iphone
+        command:     'zone home'
 
 icloud_command_gary_iphone_zone_quail:
   alias: 'Set Zone Quail (Gary)'
@@ -154,8 +167,8 @@ icloud_command_gary_iphone_zone_quail:
     - service: device_tracker.icloud_update
       data:
         account_name: gary_icloud
-        device_name: gary_iphone
-        command: 'zone Quail'
+        device_name:  gary_iphone
+        command:     'zone Quail'
         
 icloud_command_gary_iphone_zone_not_home:
   alias: 'Set Zone Away (Gary)'
@@ -163,26 +176,26 @@ icloud_command_gary_iphone_zone_not_home:
     - service: device_tracker.icloud_update
       data:
         account_name: gary_icloud
-        device_name: gary_iphone
-        command: 'zone not_home'
+        device_name:  gary_iphone
+        command:     'zone not_home'
         
 icloud_command_lillian_iphone_zone_home:
-  alias: 'Set Zone Home (Lillian)'
+  alias: 'Set Zone Home (Lillian/gary_icloud)'
   sequence:
     - service: device_tracker.icloud_update
       data:
         account_name: gary_icloud
-        device_name: lillian_iphone
-        command: 'zone home'
+        device_name:  lillian_iphone
+        command:     'zone home'
         
 icloud_command_lillian_iphone_zone_not_home:
-  alias: Set Zone Away (Lillian)'
+  alias: Set Zone Away (Lillian/gary_icloud)'
   sequence:
     - service: device_tracker.icloud_update
       data:
         account_name: gary_icloud
-        device_name: lillian_iphone
-        command: 'zone not_home'
+        device_name:  lillian_iphone
+        command:     'zone not_home'
         
 icloud_gary_iphone_see_away:
   alias: 'Set Away via device_tracker.see svc call (Gary)'
@@ -227,59 +240,7 @@ icloud_command_debug_test_old:
     - service: device_tracker.icloud_update
       data:
         account_name: gary_icloud
-        command: debug old
-
-icloud_gary_iphone_data_notification:
-  alias: 'Gary - iCloud Cmd - Data Notification'
-  sequence:
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'distance={{state_attr("device_tracker.gary_iphone","distance")}}/{{states("sensor.gary_iphone_distance")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'waze_distance={{state_attr("device_tracker.gary_iphone","waze_distance")}}/{{states("sensor.gary_iphone_waze_distance")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'calc_distance={{state_attr("device_tracker.gary_iphone","calc_distance")}}/{{states("sensor.gary_iphone_calc_distance")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'travel_time={{state_attr("device_tracker.gary_iphone","travel_time")}}/{{states("sensor.gary_iphone_travel_time")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'dir_of_travel={{state_attr("device_tracker.gary_iphone","dir_of_travel")}}/{{states("sensor.gary_iphone_dir_of_travel")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'gps_accuracy={{state_attr("device_tracker.gary_iphone","gps_accuracy")}}/{{states("sensor.gary_iphone_gps_accuracy")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'poll_count={{state_attr("device_tracker.gary_iphone","poll_count")}}/{{states("sensor.gary_iphone_poll_count")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'info={{state_attr("device_tracker.gary_iphone","info")}}/{{states("sensor.gary_iphone_info")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'interval={{state_attr("device_tracker.gary_iphone","interval")}}/{{states("sensor.gary_iphone_interval")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'last_located={{state_attr("device_tracker.gary_iphone","last_located")}}/{{states("sensor.gary_iphone_last_located")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'last_update={{state_attr("device_tracker.gary_iphone","last_update")}}/{{states("sensor.gary_iphone_last_update")}}/'
-    - service: notify.ios_gary_iphone
-      data_template:
-        title: 'Data'
-        message: 'next_update={{state_attr("device_tracker.gary_iphone","next_update")}}/{{states("sensor.gary_iphone_next_update")}}/'
+        command:      debug old
 
 
 
