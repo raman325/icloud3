@@ -24,7 +24,42 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 
 ![Screenshots](screenshots/Readme-Screenshots.jpg)
 
-[TOC]
+- [iCloud3  Device Tracker Custom Component](https://github.com/gcobb321/icloud3#icloud3--device-tracker-custom-component)
+  * [INTRODUCTION](https://github.com/gcobb321/icloud3#introduction)
+    + [Installation](https://github.com/gcobb321/icloud3#installation)
+    + [What's different](https://github.com/gcobb321/icloud3#what-s-different)
+    + [How it works](https://github.com/gcobb321/icloud3#how-it-works)
+      - [What other programs do I need](https://github.com/gcobb321/icloud3#what-other-programs-do-i-need)
+      - [What happens if I don't have the IOS app on my device](https://github.com/gcobb321/icloud3#what-happens-if-i-don-t-have-the-ios-app-on-my-device)
+    + [Home Assistant Configuration](https://github.com/gcobb321/icloud3#home-assistant-configuration)
+    + [About Your Apple iCloud Account](https://github.com/gcobb321/icloud3#about-your-apple-icloud-account)
+  * [CONFIGURATION VARIABLES](https://github.com/gcobb321/icloud3#configuration-variables)
+    + [User, Account and Device Configuration Items](https://github.com/gcobb321/icloud3#user--account-and-device-configuration-items)
+    + [Zone, Interval and Sensor Configuration Items](https://github.com/gcobb321/icloud3#zone--interval-and-sensor-configuration-items)
+    + [Waze Configuration Items](https://github.com/gcobb321/icloud3#waze-configuration-items)
+  * [SPECIAL ZONES](https://github.com/gcobb321/icloud3#special-zones)
+    + [Dynamic Stationary Zone](https://github.com/gcobb321/icloud3#dynamic-stationary-zone)
+    + [near_zone Zone](https://github.com/gcobb321/icloud3#near-zone-zone)
+  * [ATTRIBUTES](https://github.com/gcobb321/icloud3#attributes)
+    + [Location and Polling Attributes](https://github.com/gcobb321/icloud3#location-and-polling-attributes)
+    + [Device Status Information Attributes](https://github.com/gcobb321/icloud3#device-status-information-attributes)
+    + [Other Attributes](https://github.com/gcobb321/icloud3#other-attributes)
+  * [SENSORS CREATED FROM DEVICE ATTRIBUTES](https://github.com/gcobb321/icloud3#sensors-created-from-device-attributes)
+    + [How they are used in Automations and on Lovelace Cards](https://github.com/gcobb321/icloud3#how-they-are-used-in-automations-and-on-lovelace-cards)
+    + [Special Sensors](https://github.com/gcobb321/icloud3#special-sensors)
+    + [Use *sensor.devicename_zone* instead of *device_tracker.devicename state* for zone change](https://github.com/gcobb321/icloud3#use--sensordevicename-zone--instead-of--device-trackerdevicename-state--for-zone-change)
+    + [Naming the Sensor](https://github.com/gcobb321/icloud3#naming-the-sensor)
+  * [DEVICE TRACKER SERVICES](https://github.com/gcobb321/icloud3#device-tracker-services)
+    + [*icloud_update* Service  --  Control How iCloud3 Operates](https://github.com/gcobb321/icloud3#-icloud-update--service------control-how-icloud3-operates)
+    + [*icloud_set_interval*  Service  --  Override the interval](https://github.com/gcobb321/icloud3#-icloud-set-interval---service------override-the-interval)
+    + [*icloud_lost_iphone*  Service --  Play a tune to find your phone](https://github.com/gcobb321/icloud3#-icloud-lost-iphone---service-----play-a-tune-to-find-your-phone)
+    + [*icloud_restart* Service -- Restart the iCloud3 Component](https://github.com/gcobb321/icloud3#-icloud-restart--service----restart-the-icloud3-component)
+  * [TECHNICAL INFORMATION](https://github.com/gcobb321/icloud3#technical-information)
+    + [How the Interval is Determined](https://github.com/gcobb321/icloud3#how-the-interval-is-determined)
+    + [Displaying Interval Calculation Information in the *Info* Field](https://github.com/gcobb321/icloud3#displaying-interval-calculation-information-in-the--info--field)
+    + [Writing Debug Information to the HA Log File](https://github.com/gcobb321/icloud3#writing-debug-information-to-the-ha-log-file)
+
+
 
 ### Installation
 
