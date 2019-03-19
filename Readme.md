@@ -70,7 +70,7 @@ iCloud3 uses the GitHub Releases framework to download all the necessary install
 
 *Note:* The WazeRouteCalculator component is use to calculate driving distance and time from your location to your Home zone. Normally, it is installed with the Home Assistant and Hass.io frameworks. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and instal Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from Home. Add the `distance_method: calc` parameter to your device_tracker: icloud3 configuration setup (see more information on this and other parameters later).
 
-                                                              + [Top](https://github.com/gcobb321/icloud3#table-of-contents)
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### What's different
 
@@ -99,7 +99,7 @@ iCloud3 has many features not in the base iCloud device_tracker that is part of 
 | ● Service Calls | 4 | 4 + 12 special commands |
 | ● Lines of code | 425 | 4000+ |
 
-                                                     [Top](https://github.com/gcobb321/icloud3#table-of-contents)
+*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
 ### How it works
 
@@ -119,7 +119,7 @@ The above analysis results in a polling interval. The further away from home and
 Note: The `pyicloud.py` Python component is part of Home Assistant and used to poll the device, requesting location and other information. If the iCloud account is associated with multiple devices, all of the devices are polled, whether or not the device is being tracked by Home Assistant. This is a limitation of pyicloud.py. 
 
 
-[- Top -](https://github.com/gcobb321/icloud3#table-of-contents)
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 #### What other programs do I need
 
@@ -137,7 +137,7 @@ The HA proximity component also determines distance between zones and the device
 
 ​		[where the proximity component does not.]()
 
-​                                                                                                                                                                                  [- Top -](https://github.com/gcobb321/icloud3#table-of-contents)
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 #### What happens if I don't have the IOS app on my device
 
@@ -211,8 +211,8 @@ The Device Name field of the device in Settings App>General>About>Name field on 
 
 *Note:* When you use iCloud account is accessed on a new device, you may receive an email from Apple stating that someone has logged into your account.  
 
- 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ## CONFIGURATION VARIABLES
 
@@ -259,6 +259,7 @@ exclude_device:
 [Special Note for iCloud2 Users: It is recommended that the *filter_type* configuration  entry be changed to *include_devices*.](https://github.com/gcobb321/icloud3)
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### Zone, Interval and Sensor Configuration Items
 
@@ -291,6 +292,7 @@ iCloud location updates come with some gps_accuracy varying from 10 to 5000 mete
 *Note:* The accuracy and retry count are displayed in the `info` attribute field (*GPS.Accuracy-263(2)*) and on the `poll_count`  attribute field (*2-GPS*). In this example, the accuracy has been poor for 2 polling cycles.  
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### Waze Configuration Items
 
@@ -319,7 +321,7 @@ When using Waze and the distance from your current location to home is more than
 
 *Note:* Using the default value, the next update will be 3/4 of the time it takes to drive home from your current location. The one after that will be 3/4 of the time from that point. The result is a smaller interval as you get closer to home and a larger one as you get further away.  
 
-
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ## SPECIAL ZONES  
 
@@ -347,6 +349,7 @@ To solve this, a special 'near_zone' zone can be created that is a short distanc
 *Note:* You can have more than one 'near_zone' zone in the zones.yaml file. Set them up with a unique name that starts with 'near_zone';, e.g., near_zone_home, near_zone_quail, near_zone_work, etc. The *friendly_name* attribute should be NearZone for each one.
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ## ATTRIBUTES
 
@@ -400,6 +403,7 @@ The action or notification that caused the last update (Geographic Zone Entered 
 When the last update was completed.
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### Device Status Information Attributes
 
@@ -425,6 +429,7 @@ If the device is running in low power mode.
 Device information provided by the iCloud account.  
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### Other Attributes
 
@@ -438,6 +443,7 @@ The devices that are being tracked based on the 'includes' and 'excludes' specif
 The version of iCloud3 you are running.  
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ## SENSORS CREATED FROM DEVICE ATTRIBUTES
 
@@ -479,6 +485,7 @@ The following sensors are updated using the device_tracker's attributes values:
 | _info            |                 |                 |
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### Special Sensors
 
@@ -511,6 +518,7 @@ The 'badge' sensor is used to display either the zone or distance from home for 
 ![badge](screenshots\badge.jpg)
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### Use *sensor.devicename_zone* instead of *device_tracker.devicename state* for zone change
 
@@ -519,6 +527,7 @@ There are times when gps wanders and you receive a zone exit state change when t
 The solution to eliminating this problem is to not trigger automations based on device state changes but to trigger them on zone changes. A *zone* and *last_zone* template sensor, updated by iCloud3, is used to do this. These template sensors are only updated by iCloud3 so they are not effected by incorrect device state changes.  See the example *gary_leaves_zone* automation in the ``` sn_home_away_gary.yaml ``` sample file where the ``` sensor.gary_iphone_zone ``` is used as a trigger. 
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### Naming the Sensor
 
@@ -545,6 +554,7 @@ sensor_name_prefix:
 > The  ``` sn_device_tracker_attributes.yaml ``` file containing the attribute template sensors distributed in the configuration section of the iCloud3 repository must be deleted (or commented out so it will not load). The new version of the  ``` sn_badges ``` sensor template file must be used.
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ## DEVICE TRACKER SERVICES 
 
@@ -670,6 +680,7 @@ icloud_command_info_logging_toggle:
 ```
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ###  *icloud_set_interval*  Service  --  Override the interval
 
@@ -711,6 +722,7 @@ icloud_set_interval_5_hrs_all:
         interval: '5 hrs'
  
 ```
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### *icloud_lost_iphone*  Service --  Play a tune to find your phone
 This service will play the Lost iPhone sound on a specific device. 
@@ -728,6 +740,7 @@ This service will refresh all of the devices being handled by iCloud3 and can be
 | account_name | account_name of the iCloud3 custom component specified in the Configuration Variables section described at the beginning of this document. *(Required)* |
 
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ## TECHNICAL INFORMATION
 
@@ -776,6 +789,8 @@ The algorithm uses a sequence of tests to determine the interval. If the test is
 
    
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
+
 ### Displaying Interval Calculation Information in the *Info* Field
 
 iCloud3 can display information on how the *Interval* time was calculated when the device is polled. As mentioned, this is dependent on the zone, direction of travel, Waze travel time (if Waze is used), the distance between your current location and home and the accuracy of the gps information provided by the iCloud service and the IOS App. Below are samples what is displayed in the *Info* field.
@@ -803,6 +818,7 @@ icloud_command_info_interval_formula:
         account_name: gary_icloud
         command: info interval
 ```
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### Writing Debug Information to the HA Log File
 
@@ -828,3 +844,4 @@ icloud_command_info_logging_toggle:
         command: info logging
 ```
 
+*[Top]*(https://github.com/gcobb321/icloud3#table-of-contents)
