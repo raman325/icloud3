@@ -70,7 +70,7 @@ iCloud3 uses the GitHub Releases framework to download all the necessary install
 
 *Note:* The WazeRouteCalculator component is use to calculate driving distance and time from your location to your Home zone. Normally, it is installed with the Home Assistant and Hass.io frameworks. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and instal Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from Home. Add the `distance_method: calc` parameter to your device_tracker: icloud3 configuration setup (see more information on this and other parameters later).
 
-[Top](https://github.com/gcobb321/icloud3#table-of-contents)
+                                                     [- Top -](https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### What's different
 
@@ -99,7 +99,7 @@ iCloud3 has many features not in the base iCloud device_tracker that is part of 
 | ● Service Calls | 4 | 4 + 12 special commands |
 | ● Lines of code | 425 | 4000+ |
 
-[Top](https://github.com/gcobb321/icloud3#table-of-contents)
+                                                     [- Top -](https://github.com/gcobb321/icloud3#table-of-contents)
 
 ### How it works
 
@@ -119,7 +119,7 @@ The above analysis results in a polling interval. The further away from home and
 Note: The `pyicloud.py` Python component is part of Home Assistant and used to poll the device, requesting location and other information. If the iCloud account is associated with multiple devices, all of the devices are polled, whether or not the device is being tracked by Home Assistant. This is a limitation of pyicloud.py. 
 
 
-[Top](https://github.com/gcobb321/icloud3#table-of-contents)
+                                                     [- Top -](https://github.com/gcobb321/icloud3#table-of-contents)
 
 #### What other programs do I need
 
@@ -137,7 +137,7 @@ The HA proximity component also determines distance between zones and the device
 
 ​		[where the proximity component does not.]()
 
-[Top](https://github.com/gcobb321/icloud3#table-of-contents)
+​                                                                                                                                                                                  [- Top -](https://github.com/gcobb321/icloud3#table-of-contents)
 
 #### What happens if I don't have the IOS app on my device
 
