@@ -515,8 +515,7 @@ The 'badge' sensor is used to display either the zone or distance from home for 
       entity_picture_template: /local/lillian.png
 ```
 
-![badge](screenshots\badge.jpg)
-
+![badge](screenshots\Badge.jpg)
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
