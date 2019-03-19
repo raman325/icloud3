@@ -24,6 +24,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 
 ![Screenshots](screenshots/Readme-Screenshots.jpg)
 
+[TOC]
 
 ### Installation
 
