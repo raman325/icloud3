@@ -99,6 +99,8 @@ iCloud3 has many features not in the base iCloud device_tracker that is part of 
 | ● Service Calls | 4 | 4 + 12 special commands |
 | ● Lines of code | 425 | 4000+ |
 
+[Top](https://github.com/gcobb321/icloud3#table-of-contents)
+
 ### How it works
 
 iCloud3 operates on a 5-second cycle, looking for transactions from the HA IOS App. It looks for Geographic Zone Enter/Exit, Background Fetch, Significant Location Update and Manual transactions. When one is detected, it determines if the transaction is current before it is processed. Transactions older than 2-minutes are discarded. Additionally, to minimize GPS wandering and out-of-zone state changes, transactions within 1km of a zone are discarded when the device is in a zone.  Every 15-seconds, it determines if any devices needed to be polled using the iCloud Location Services service as described below.
@@ -117,7 +119,7 @@ The above analysis results in a polling interval. The further away from home and
 Note: The `pyicloud.py` Python component is part of Home Assistant and used to poll the device, requesting location and other information. If the iCloud account is associated with multiple devices, all of the devices are polled, whether or not the device is being tracked by Home Assistant. This is a limitation of pyicloud.py. 
 
 
-
+[Top](https://github.com/gcobb321/icloud3#table-of-contents)
 
 #### What other programs do I need
 
@@ -135,7 +137,7 @@ The HA proximity component also determines distance between zones and the device
 
 ​		[where the proximity component does not.]()
 
-
+[Top](https://github.com/gcobb321/icloud3#table-of-contents)
 
 #### What happens if I don't have the IOS app on my device
 
