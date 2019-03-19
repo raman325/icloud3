@@ -24,7 +24,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 
 ![Screenshots](screenshots/Readme-Screenshots.jpg)
 
-- [Table of Contents](https://github.com/gcobb321/icloud3#table-of-contents)
+### Table of Contents
   * [INTRODUCTION](https://github.com/gcobb321/icloud3#introduction)
     + [Installation](https://github.com/gcobb321/icloud3#installation)
     + [What's different](https://github.com/gcobb321/icloud3#whats-different)
