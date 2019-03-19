@@ -25,8 +25,6 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 ![Screenshots](screenshots/Readme-Screenshots.jpg)
 
 
-./gh-md-toc https://github.com/ekalinin/envirius/blob/master/README.md
-
 ### Installation
 
 iCloud3 uses the GitHub Releases framework to download all the necessary installation files (iCloud3 custom component, documentation, sample configuration files, sample lovelace cards, etc). Go to the 'Releases' tab at the top of this repository, select the version of iCloud3 you want and download the .zip file. 
