@@ -2,6 +2,18 @@
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
+#### Version 1.0.1 - 3/20/2019
+
+- Fixed a problem updating the '_badge' sensor. If the entity 'sensor.devicename_badge' did not exist, an error message was displayed. Now, if it does not exist, one will be created that can be used in your own badge type of sensor as a value_template item; e.g., 
+
+  ```
+  value_template: '{{sensor.gary_iphone_badge}}'
+  ```
+
+  *See the 'Special Sensors' section in the documentation for more information about the '_badge' sensor.*
+
+  
+
 #### Version 1.0.0 - 3/15/2019
 
 - HA 89+ -- Create a *config/custom_component/icloud3* directory on the device (Raspberry Pi) running Home Assistant. Copy the  ``` device_tracker.py ``` file into that directory.
