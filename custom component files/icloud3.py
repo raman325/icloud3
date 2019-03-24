@@ -44,7 +44,7 @@ except ImportError:
     WAZE_IMPORT_SUCCESSFUL = 'NO'
     pass
 
-VERSION = '1.0.1'      #Custom Component Updater 
+VERSION = '1.0.2'      #Custom Component Updater 
 _LOGGER = logging.getLogger(__name__)
 REQUIREMENTS = ['pyicloud==0.9.1']
 
@@ -79,6 +79,8 @@ CONF_WAZE_REALTIME          = 'waze_realtime'
 CONF_DISTANCE_METHOD        = 'distance_method'
 CONF_COMMAND                = 'command'
 CONF_SENSOR_NAME_PREFIX     = 'sensor_name_prefix'
+CONF_SENSOR_BADGE_PICTURE   = 'sensor_badge_picture'
+
 
 # entity attributes
 ATTR_ZONE               = 'zone'
@@ -185,7 +187,7 @@ SENSOR_ATTR_ICON        = {'zone': 'mdi:cellphone-iphone',
                            'altitude': 'mdi:image-filter-hdr',
                            'battery_status': 'mdi:battery', 
                            'gps_accuracy': 'mdi:map-marker-radius',
-                           'badge': 'mdi:shield-acount'}
+                           'badge': 'mdi:shield-account'}
 
 
 ATTR_TIMESTAMP_FORMAT    = '%Y-%m-%dT%H:%M:%S.%f'       
@@ -284,6 +286,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_STATIONARY_INZONE_INTERVAL, default='30 min'): cv.string,    
     vol.Optional(CONF_STATIONARY_STILL_TIME, default='8 min'): cv.string,
     vol.Optional(CONF_SENSOR_NAME_PREFIX): vol.All(cv.ensure_list, [cv.string]),
+    vol.Optional(CONF_SENSOR_BADGE_PICTURE): vol.All(cv.ensure_list, [cv.string]),
     vol.Optional(CONF_COMMAND): cv.string
 })
 
@@ -348,7 +351,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
     stationary_inzone_interval_str = config.get(CONF_STATIONARY_INZONE_INTERVAL)
     stationary_still_time_str = config.get(CONF_STATIONARY_STILL_TIME)
     sensor_name_prefix     = config.get(CONF_SENSOR_NAME_PREFIX)
-    
+    sensor_badge_picture   = config.get(CONF_SENSOR_BADGE_PICTURE)
     if waze_region not in WAZE_REGIONS:
         log_msg = ("Invalid Waze Region ({}). Valid Values are: "\
                       "NA=US or North America, EU=Europe, IL=Isreal").\
@@ -365,6 +368,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
         inzone_interval_str, gps_accuracy_threshold, hide_gps_coordinates,
         stationary_inzone_interval_str, stationary_still_time_str,
         ignore_gps_accuracy_inzone_flag, sensor_name_prefix,
+        sensor_badge_picture,
         unit_of_measurement, travel_time_factor, distance_method,
         waze_region, waze_realtime, waze_max_distance, waze_min_distance)
 
@@ -448,6 +452,7 @@ class Icloud(DeviceScanner):
         inzone_interval_str, gps_accuracy_threshold, hide_gps_coordinates,
         stationary_inzone_interval_str, stationary_still_time_str,
         ignore_gps_accuracy_inzone_flag, sensor_name_prefix,
+        sensor_badge_picture,
         unit_of_measurement, travel_time_factor, distance_method,
         waze_region, waze_realtime, waze_max_distance, waze_min_distance):
 
@@ -459,9 +464,16 @@ class Icloud(DeviceScanner):
         self.accountname        = account      #name
         self.see                = see
         self.friendly_name      = {}           #name made from status[CONF_NAME]
+        self.verification_code        = None
+        self.trusted_device           = None
+        self.trusted_device_id        = None
+        self.valid_trusted_device_ids = None
+
         self.restart_icloud_account_request_flag = False
         self.authenticated_time = ''
         self.device_entity_id   = {}
+        self.sensor_base_entity = {}
+        self.sensor_badge_attrs = {} 
         
         #string set using the update_icloud command to pass debug commands
         #into icloud3 to monitor operations or to set test variables
@@ -493,19 +505,17 @@ class Icloud(DeviceScanner):
             self.include_devices        = filter_devices
         else:
             self.include_devices        = include_devices
-
-        self.sensor_name_prefix = \
-                self._setup_sensor_name_prefix(sensor_name_prefix)
-                
+    
         self.tracked_devices            = {}
         self.seen_this_device_flag      = {}
         self.inzone_interval = self._time_str_to_seconds(
-                                     inzone_interval_str)
+                                            inzone_interval_str)
 
         self.gps_accuracy_threshold      = int(gps_accuracy_threshold)
         self.ignore_gps_accuracy_inzone_flag = ignore_gps_accuracy_inzone_flag
         self.hide_gps_coordinates        = hide_gps_coordinates
-
+        self.sensor_name_prefix          = sensor_name_prefix
+        self.sensor_badge_picture        = sensor_badge_picture
         self.unit_of_measurement         = unit_of_measurement
         self.travel_time_factor          = float(travel_time_factor)
 
@@ -595,7 +605,7 @@ class Icloud(DeviceScanner):
         self.waze_dist                 = {}
         self.calc_dist                 = {}
         self.dist                      = {}
-            
+           
         self.state_change_flag         = {}
         self.iosapp_update_flag        = {}
         self.last_dev_timestamp        = {}
@@ -612,12 +622,13 @@ class Icloud(DeviceScanner):
         self.waze_max_distance      = self._mi_to_km(float(waze_max_distance))
         self.waze_max_dist_save     = self.waze_max_distance
         self.waze_realtime          = waze_realtime
-
-        self.verification_code        = None
-        self.trusted_device           = None
-        self.trusted_device_id        = None
-        self.valid_trusted_device_ids = None
-
+        
+        #Keep distance data to be used by another device if nearby. Also keep
+        #source of copied data so that device wo't reclone from the device
+        #using it.
+        self.last_waze_dist_data        = {}
+        self.waze_data_copied_from      = {}
+        
         self.restart_icloud()
 
         #add HA event that will call the _polling_loop_15_sec_icloud function every 15 seconds
@@ -672,7 +683,14 @@ class Icloud(DeviceScanner):
             self.device_type              = {}
             self.overrideinterval_seconds = {}
             self.tracking_device_flag     = {}
-
+            self.sensor_badge_attrs       = {} 
+            self.sensor_base_entity       = {}
+            self.sensor_base_entity['prefix'] = 'devicename'
+            self._setup_sensor_name_initialize(self.sensor_name_prefix)  
+            self._setup_sensor_name_initialize(self.sensor_badge_picture) 
+            self.last_waze_dist_data        = {}
+            self.waze_data_copied_from      = {}
+            
             log_msg = ("Waze Settings: Region={}, Realtime={}, "
                           "MaxDistance={}, MinDistance={}").format(
                           self.waze_region, self.waze_realtime,
@@ -699,28 +717,28 @@ class Icloud(DeviceScanner):
 
                 if location is None:
                     log_msg = (
-                        "Not tracking {}/{} ({}), No location information").\
+                        "Not tracking {}/{}({}), No location information").\
                         format(self.accountname, devicename, device_type) 
                     self._LOGGER_info_msg(log_msg)
 
                     tracking_flag = False
                 elif status['locationEnabled'] is False:
                     log_msg = (
-                        "Not tracking {}/{} ({}), Location Disabled").\
+                        "Not tracking {}/{}({}), Location Disabled").\
                         format(self.accountname, devicename, device_type) 
                     self._LOGGER_info_msg(log_msg)
 
                     tracking_flag = False
                 elif status['deviceStatus'] == '204':
                     log_msg = (
-                        "Not tracking {}/{} ({}), Unregistered Device").\
+                        "Not tracking {}/{}({}), Unregistered Device").\
                         format(self.accountname, devicename, device_type) 
                     self._LOGGER_info_msg(log_msg)
 
                     tracking_flag = False
                 elif devicename in self.tracking_device_flag:
                     log_msg = (
-                        "Not tracking {}/{} ({}), Multiple devices with same"
+                        "Not tracking {}/{}({}), Multiple devices with same"
                         "name").format(
                         self.accountname, devicename, device_type) 
                     self._LOGGER_info_msg(log_msg)
@@ -734,9 +752,8 @@ class Icloud(DeviceScanner):
                 if tracking_flag is False:
                     continue
 
-                self.tracking_devicenames = '{}{}/{}, '.\
-                        format(self.tracking_devicenames, self.accountname, 
-                        devicename)
+                self.tracking_devicenames = '{}{}, '.\
+                        format(self.tracking_devicenames, devicename)
                        
                 self.tracked_devices[devicename]  = device
                 self.device_type[devicename]      = device_type
@@ -747,11 +764,16 @@ class Icloud(DeviceScanner):
                 user_name = status[CONF_NAME].split(" ")
                 user_name = user_name[0].split("'")
                 user_name = user_name[0].split('-')
-                self.friendly_name[devicename] = user_name[0]
+                friendly_name = user_name[0]
+                self.friendly_name[devicename] = friendly_name
                 
-         
-            log_msg = ("Tracking Devices {}").\
-                    format(self.tracking_devicenames[:-2]) 
+                #Put friendy name in the badge base attrs for devicename
+                self._setup_sensor_name_devicename(devicename)
+            
+            self.tracking_devicenames = '{}--({})'.format(
+                        self.accountname, self.tracking_devicenames[:-2])            
+            log_msg = ("Tracking Devices {}").format(
+                            self.tracking_devicenames) 
             self._LOGGER_info_msg(log_msg)
                                         
             for devicename in self.tracked_devices:
@@ -773,7 +795,7 @@ class Icloud(DeviceScanner):
                 self.device_being_updated_retry_cnt[devicename] = 0
                 self.seen_this_device_flag[devicename]     = False
                 self.went_3km[devicename]                  = False
-
+               
                 #times, flags
                 self.last_update_time[devicename]     = ZERO_HHMMSS
                 self.last_update_seconds[devicename]  = 0
@@ -814,8 +836,8 @@ class Icloud(DeviceScanner):
                         self.zone_home_lat, self.zone_home_long, 0, 0)
                 
                 attrs   = {}
-                attrs[ATTR_ZONE]               = ''
-                attrs[ATTR_LAST_ZONE]          = ''
+                attrs[ATTR_ZONE]               = 'not_set'
+                attrs[ATTR_LAST_ZONE]          = 'not_set'
                 attrs[ATTR_ZONE_TIMESTAMP]     = ''
                 attrs[ATTR_TRIGGER]            = ''
                 attrs[ATTR_TIMESTAMP]          = \
@@ -874,7 +896,7 @@ class Icloud(DeviceScanner):
         devices = self.api.trusted_devices
 
         for i, device in enumerate(devices):
-            devicename = "\n....Device Id={} for {} ({})". \
+            devicename = "\n....Device Id={} for {}({})". \
                         format(i, device.get('phoneNumber'), \
                         device.get('deviceName'))
             devicesstring += "{}; ".format(devicename)
@@ -1230,7 +1252,6 @@ class Icloud(DeviceScanner):
         #Cycle thru all devices and check to see if devices need to be
         #updated via every 15 seconds
         if (((this_5sec_loop_second) % 15) == 0):
-            self.iosapp_update_flag[devicename] = False
             self._polling_loop_15_sec_icloud(now)
             
 #--------------------------------------------------------------------       
@@ -1243,7 +1264,7 @@ class Icloud(DeviceScanner):
             self.device_being_updated_retry_cnt[devicename] += 1
             
             log_msg = ((
-                "{} ({}) Retrying Update, Update was not "
+                "{}({}) Retrying Update, Update was not "
                 "completed in last cycle, Retry #{}").format(
                 self.friendly_name.get(devicename),
                 self.device_type.get(devicename),
@@ -1410,13 +1431,13 @@ class Icloud(DeviceScanner):
 
             except Exception as err:
                 _LOGGER.exception(err)
-                log_msg = ("Error Updating Device {} ({})").format(\
+                log_msg = ("Error Updating Device {}({})").format(\
                             devicename, err)
                 self._LOGGER_error_msg(log_msg)
             
             try:    
                 log_msg=(
-                    "{} ({}) Update completed using iosapp data, Zone={}, "
+                    "{}({}) Update completed using iosapp data, Zone={}, "
                     "Interval={}, Distance={}, TravelTime={}, "
                     "NextUpdate={}").format(
                     self.friendly_name.get(devicename),
@@ -1492,7 +1513,7 @@ class Icloud(DeviceScanner):
                 current_state = self._get_current_state(devicename).lower()
 
                 if current_state != self.state_last_poll.get(devicename):
-                    log_msg = ("{} ({}) Zone Change Detected, "
+                    log_msg = ("{}({}) Zone Change Detected, "
                         "From={}, To={}").format(
                         self.friendly_name.get(devicename),
                         self.device_type.get(devicename),
@@ -1525,7 +1546,7 @@ class Icloud(DeviceScanner):
                     self.device_being_updated_retry_cnt[devicename] = 0
                     self.log_debug_msgs_trace_flag = False
                     
-                    log_msg = ("{} ({}) Canceling Update Retry").format(
+                    log_msg = ("{}({}) Canceling Update Retry").format(
                           self.friendly_name.get(devicename),
                         self.device_type.get(devicename))
                     self._LOGGER_info_msg(log_msg)
@@ -1533,7 +1554,7 @@ class Icloud(DeviceScanner):
                 if self.device_being_updated_flag.get(devicename):
                     self.device_being_updated_retry_cnt[devicename] += 1
                     
-                    log_msg = ("{} ({}) Retrying Update, Update was not "
+                    log_msg = ("{}({}) Retrying Update, Update was not "
                             "completed in last cycle").format(
                             self.friendly_name.get(devicename),
                             self.device_type.get(devicename))
@@ -1606,7 +1627,7 @@ class Icloud(DeviceScanner):
                             self.next_update_seconds.get(devicename)): 
                     do_not_update_flag = True
                     log_msg = (
-                        "{} ({}) not updated, in zone {}. "
+                        "{}({}) not updated, in zone {}. "
                         "Next update at {}").format(
                         self.friendly_name.get(devicename),
                         self.device_type.get(devicename),
@@ -1623,7 +1644,7 @@ class Icloud(DeviceScanner):
                         self.accountname, devicename,
                          self.state_this_poll.get(devicename), update_reason)
                 self._LOGGER_debug_msg(log_msg)
-                log_msg = ("{} ({}) Updating, {}").format(
+                log_msg = ("{}({}) Updating, {}").format(
                         self.friendly_name.get(devicename),
                         self.device_type.get(devicename),
                         update_reason)
@@ -1665,7 +1686,7 @@ class Icloud(DeviceScanner):
                             self.location_isold_cnt.get(devicename), age)
                    
                     log_msg = (
-                        "{} ({}) not updated, old iCloud location data, "
+                        "{}({}) not updated, old iCloud location data, "
                         "Age {}m, Retry #{}").format(
                         self.friendly_name.get(devicename),
                         self.device_type.get(devicename),
@@ -1680,7 +1701,7 @@ class Icloud(DeviceScanner):
                         gps_accuracy)
                         
                     log_msg = (
-                        "{} ({}) not updated, Poor GPS accuracy "
+                        "{}({}) not updated, Poor GPS accuracy "
                         "({}), Retry #{}.").format(
                         self.friendly_name.get(devicename),
                         self.device_type.get(devicename),
@@ -1803,7 +1824,7 @@ class Icloud(DeviceScanner):
                     self.device_being_updated_flag[devicename] = False
 
                 except Exception as err:
-                    log_msg = ("Error Updating Device {} ({})").format(\
+                    log_msg = ("Error Updating Device {}({})").format(\
                                 devicename, err)
                     self._LOGGER_error_msg(log_msg)
                     
@@ -1811,7 +1832,7 @@ class Icloud(DeviceScanner):
                 
                 try:                
                     log_msg=(
-                        "{} ({}) Update completed using iCloud data, Zone={}, "
+                        "{}({}) Update completed using iCloud data, Zone={}, "
                         "Interval={}, Distance={}, TravelTime={}, "
                         "NextUpdate={}").format(
                         self.friendly_name.get(devicename),
@@ -2445,8 +2466,18 @@ class Icloud(DeviceScanner):
                 attrs[ATTR_WAZE_DISTANCE] = waze_dist_from_home
             elif self.waze_status == WAZE_NOT_USED:
                 attrs[ATTR_WAZE_DISTANCE] = 'WazeOff'
-            elif waze_dist_from_home > 0:
+            elif self.waze_status == WAZE_ERROR:
+                attrs[ATTR_WAZE_DISTANCE] = 'NoRoutes'
+            elif self.waze_status == WAZE_OUT_OF_RANGE:
+                attrs[ATTR_WAZE_DISTANCE] = 'Range-{}'.format(
+                        int(waze_dist_from_home))
+            elif dir_of_travel == 'in_zone':
+                attrs[ATTR_WAZE_DISTANCE] = ''
+            elif self.waze_status == WAZE_PAUSED:
                 attrs[ATTR_WAZE_DISTANCE] = 'Paused'
+            elif waze_dist_from_home > 0:
+                attrs[ATTR_WAZE_TIME]     = waze_time_msg
+                attrs[ATTR_WAZE_DISTANCE] = waze_dist_from_home
             else:
                 attrs[ATTR_WAZE_DISTANCE] = ''
 
@@ -2499,7 +2530,7 @@ class Icloud(DeviceScanner):
             log_msg = (
                 "►►GET DEVICE DISTANCE DATA Entered ~~{}~~").format(devicename) 
             self._LOGGER_debug_msg(log_msg)
-
+              
             last_dir_of_travel  = 'not_set'
             last_dist_from_home = 0
             last_waze_time      = 0
@@ -2507,7 +2538,6 @@ class Icloud(DeviceScanner):
             last_long           = self.zone_home_long
             dev_timestamp       = ZERO_HHMMSS
 
-            #if self.seen_this_device_flag.get(devicename):
             attrs = self._get_device_attributes(devicename)
 
             self._trace_device_attributes(
@@ -2539,6 +2569,7 @@ class Icloud(DeviceScanner):
             this_long = longitude
             
         except Exception as err:
+            _LOGGER.exception(err)
             attrs = self._internal_error_msg(fct_name, err, 'SetupLocation')
             return ('ERROR', attrs)
             
@@ -2563,23 +2594,24 @@ class Icloud(DeviceScanner):
             #               [ok, 0, 0, 0]  if zone=home
             #               [ok, distFmHome, timeFmHome, info] if OK
 
-            calc_dist_from_home       = self._calc_distance(
-                                    this_lat, this_long,
+            calc_dist_from_home = \
+                        self._calc_distance(this_lat, this_long,
                                     self.zone_home_lat, self.zone_home_long)
-            calc_dist_last_poll_moved = self._calc_distance(
-                                    last_lat, last_long,this_lat, this_long)
+            calc_dist_last_poll_moved = \
+                        self._calc_distance(last_lat, last_long,
+                                    this_lat, this_long)
             calc_dist_from_home_moved = \
-                                    (calc_dist_from_home - last_dist_from_home)
-                                          
-            calc_dist_from_home = self._round_to_zero(
-                        calc_dist_from_home)
-            calc_dist_last_poll_moved = self._round_to_zero(
-                        calc_dist_last_poll_moved)
-            calc_dist_from_home_moved = self._round_to_zero(
-                        calc_dist_from_home_moved)
+                        (calc_dist_from_home - last_dist_from_home)
+            calc_dist_from_home = \
+                        self._round_to_zero(calc_dist_from_home)
+            calc_dist_last_poll_moved = \
+                        self._round_to_zero(calc_dist_last_poll_moved)
+            calc_dist_from_home_moved = \
+                        self._round_to_zero(calc_dist_from_home_moved)
                         
             if self.distance_method_waze_flag:
-                self.waze_status = WAZE_USED
+                if self.waze_status != WAZE_PAUSED:
+                    self.waze_status = WAZE_USED
             else:
                 self.waze_status = WAZE_NOT_USED
                                
@@ -2608,22 +2640,41 @@ class Icloud(DeviceScanner):
             #Use Calc if close to home, Waze not accurate when close
             if self.waze_status == WAZE_USED:
                 try:
-                    waze_dist_time_info = self._get_waze_data(devicename,
-                                                    this_lat, this_long,
-                                                    last_lat, last_long,
-                                                    current_zone,
-                                                    last_dist_from_home)
-                    self.waze_status          = waze_dist_time_info[0]
-                    
+                    #See if another device is close with valid Waze data.
+                    #If so, use it instead of calling Waze again.
+                    waze_dist_time_info = self._get_waze_from_data_history(
+                            devicename, calc_dist_from_home,
+                            this_lat, this_long)  
+
+                    #No Waze data from close device. Get it from Waze
+                    if waze_dist_time_info is None:
+                        waze_dist_time_info = self._get_waze_data(devicename,
+                                                        this_lat, this_long,
+                                                        last_lat, last_long,
+                                                        current_zone,
+                                                        last_dist_from_home)
+                                                        
+                    self.waze_status = waze_dist_time_info[0]
+                        
                     if self.waze_status != WAZE_ERROR:
                         waze_dist_from_home       = waze_dist_time_info[1]
                         waze_time_from_home       = waze_dist_time_info[2]
                         waze_dist_last_poll_moved = waze_dist_time_info[3]
                         waze_dist_from_home_moved = round(waze_dist_from_home
                                                     - last_dist_from_home, 2)
+                         
+                        #Save new Waze data or retimestamp data from another
+                        #device.
+                        self.last_waze_dist_data[devicename] = \
+                                [self._time_now_seconds(), 
+                                this_lat, this_long, waze_dist_time_info]
+                        
+                    else:
+                        self.last_waze_dist_data[devicename] = []
 
                 except Exception as err:
-                    self.waze_status          = WAZE_ERROR
+                    self.last_waze_dist_data[devicename] = []
+                    self.waze_status = WAZE_ERROR
                     
         except Exception as err:
             attrs = self._internal_error_msg(fct_name, err, 'WazeError')
@@ -2631,8 +2682,6 @@ class Icloud(DeviceScanner):
             
         try:
             #don't reset data if poor gps, use the best we have
-    #        if ((current_zone == 'home' or dist_from_home < .05) and
-    #                    not self.poor_gps_accuracy_flag.get(devicename)):
             if current_zone == 'home':
                 distance_method      = 'Home/Calc'
                 dist_from_home       = 0
@@ -2762,7 +2811,7 @@ class Icloud(DeviceScanner):
                                 self.stat_zone_moved_total.get(devicename))
                 
                                     
-            dir_of_trav_msg = ("{} ({})").format(
+            dir_of_trav_msg = ("{}({})").format(
                         dir_of_travel, dir_of_trav_msg)
 
             log_msg = ("►►DIR OF TRAVEL DETERMINED, {}").format(
@@ -2776,13 +2825,20 @@ class Icloud(DeviceScanner):
                         dist_from_home_moved, dist_last_poll_moved) 
             self._LOGGER_debug_msg(log_msg)
 
-            return (current_zone, dir_of_travel,
+            distance_data = (current_zone, dir_of_travel,
                     dist_from_home, dist_from_home_moved, dist_last_poll_moved,
                     waze_dist_from_home, calc_dist_from_home,
                     waze_dist_from_home_moved, calc_dist_from_home_moved,
                     waze_dist_last_poll_moved, calc_dist_last_poll_moved,
-                    waze_time_from_home, last_dist_from_home, last_dir_of_travel,
-                    dir_of_trav_msg, dev_timestamp)
+                    waze_time_from_home, last_dist_from_home,
+                    last_dir_of_travel, dir_of_trav_msg, dev_timestamp)
+                    
+            #log_msg = ("►►Distance_data=={}-{}").format(
+            #            devicename, distance_data) 
+            #self._LOGGER_debug_msg(log_msg)
+            
+            return  distance_data            
+
         except Exception as err:
             attrs = self._internal_error_msg(fct_name, err, 'PrepData')
             return ('ERROR', attrs)
@@ -3320,7 +3376,7 @@ class Icloud(DeviceScanner):
                     zone_name, "CreateStatZone", "CreateStatZone", attrs)
                     
             log_msg = (
-                    "{} ({}) Created Stationary Zone, GPS=({}, {})").format(
+                    "{}({}) Created Stationary Zone, GPS=({}, {})").format(
                     self.friendly_name.get(devicename),
                     self.device_type.get(devicename),
                     latitude, longitude) 
@@ -3351,15 +3407,9 @@ class Icloud(DeviceScanner):
         try:
             if not attrs:
                 return
-            if self.sensor_name_prefix.get(devicename) is not None:
-                base_entity = 'sensor.{}'.format(
-                            self.sensor_name_prefix.get(devicename))
-            elif self.sensor_name_prefix.get('prefix') == 'name':
-                base_entity = 'sensor.{}'.format(
-                           self.friendly_name.get(devicename).lower())
-            else:
-                base_entity = 'sensor.{}'.format(devicename)           
-                    
+
+            badge_value = None  
+            base_entity = self.sensor_base_entity.get(devicename)
             for attr_name in SENSOR_DEVICE_ATTRS:
                 sensor_entity = "{}_{}".format(base_entity, attr_name)
                 
@@ -3395,26 +3445,7 @@ class Icloud(DeviceScanner):
                 if attr_name in SENSOR_ATTR_ICON:
                     sensor_attr['icon'] = SENSOR_ATTR_ICON.get(attr_name)
 
-                if attr_name == 'distance':
-                    badge_entity_f = "{}_badge".format(base_entity)
-                    if value and float(value) > 0:
-                        value_f = "{} {}".format(
-                                value, self.unit_of_measurement)
-                    else:
-                        value_f = attrs.get(ATTR_ZONE).title()
-
-                    try:
-                        badge_data = self.hass.states.get(badge_entity_f)
-                        badge_attr = badge_data.attributes 
-                    except:
-                        badge_attr = {}
-                        badge_attr['icon'] = SENSOR_ATTR_ICON.get('badge') 
-                        
-                    self.hass.states.set(badge_entity_f, value_f, badge_attr) 
-                    log_msg=("Badge ={}, Value='{}'").format(
-                                    badge_entity_f, value_f)
-                    self._LOGGER_debug_msg(log_msg)  
-                        
+                
                 self.hass.states.set(sensor_entity, value, sensor_attr)
                 
                 log_msg=("Sensor={}, Value='{}'").format(sensor_entity, value)
@@ -3427,17 +3458,42 @@ class Icloud(DeviceScanner):
                         value_f = 'Away'
                     else:
                         value_f = value.title()
+                        
+                    if attr_name == 'zone':
+                        badge_value = value_f
+
                     sensor_entity_f = "{}_name1".format(sensor_entity)
                     self.hass.states.set(sensor_entity_f, value_f, sensor_attr)
-                                
+                    log_msg=("Sensor={}, Value='{}'").format(sensor_entity_f, value_f)
+                    self._LOGGER_debug_msg(log_msg)
+                
                     value_f = value.title().replace('_', ' ', 99)
                     sensor_entity_f = "{}_name2".format(sensor_entity)
                     self.hass.states.set(sensor_entity_f, value_f, sensor_attr)
-                                       
+                    log_msg=("Sensor={}, Value='{}'").format(sensor_entity_f, value_f)
+                    self._LOGGER_debug_msg(log_msg)
+                
                     value_f = value.title().replace('_', '', 99)
                     sensor_entity_f = "{}_name3".format(sensor_entity)
                     self.hass.states.set(sensor_entity_f, value_f, sensor_attr)
+                    log_msg=("Sensor={}, Value='{}'").format(sensor_entity_f, value_f)
+                    self._LOGGER_debug_msg(log_msg)
+                
+                if attr_name == 'distance':
+                    if value and float(value) > 0:
+                        badge_value = "{} {}".format(
+                                value, self.unit_of_measurement)
+
+            if badge_value:   
+                badge_entity = "{}_badge".format(base_entity)
+                
+                self.hass.states.set(badge_entity, badge_value, 
+                                self.sensor_badge_attrs.get(devicename))
                                 
+                log_msg=("Badge ={}, Value='{}' {}").format(
+                        badge_entity, badge_value,
+                        self.sensor_badge_attrs.get(devicename))
+                self._LOGGER_debug_msg(log_msg) 
             return True
             
         except Exception as err:
@@ -3486,13 +3542,11 @@ class Icloud(DeviceScanner):
                 
             if self.location_isold_msg.get(devicename):
                 info = '{} ●Old.Location'.format(info)
-                
-            if (self.distance_method_waze_flag and
-                    self._isnot_inzoneZ(current_zone)):
-                if self.waze_status == WAZE_PAUSED:
-                    info = '{} ●Waze.Paused'.format(info)
-                elif self.waze_status == WAZE_ERROR:
-                    info = '{} ●Waze.Error'.format(info)
+            
+            if self.waze_data_copied_from.get(devicename) is not None:
+                copied_from = self.waze_data_copied_from.get(devicename)
+                info = '{} ●Waze data copied from {}'.format(info, 
+                        self.friendly_name.get(copied_from))
 
         except Exception as err:
             log_msg = ("►►INTERNAL ERROR-RETRYING (SetInfoAttr-{})".format(\
@@ -3541,7 +3595,7 @@ class Icloud(DeviceScanner):
         
         #devicename in 'excluded_devices' parameter ==> Don't Track
         if devicename in self.exclude_devices:
-            log_msg = ("Not tracking {}/{} ({}), Failed "
+            log_msg = ("Not tracking {}/{}({}), Failed "
                         "'exclude_devices' filter ({})").format(
                         self.accountname, devicename, device_type,
                         self.exclude_devices) 
@@ -3551,7 +3605,7 @@ class Icloud(DeviceScanner):
 
         #devicename in 'include_devices' parameter ==> Track
         elif devicename in self.include_devices:
-            log_msg = ("Tracking {}/{} ({}), Passed "
+            log_msg = ("Tracking {}/{}({}), Passed "
                         "'include_devices' filter ({})").format(
                         self.accountname, devicename, device_type,
                         self.include_devices) 
@@ -3561,7 +3615,7 @@ class Icloud(DeviceScanner):
 
         #devicetype in 'include_device_types' parameter ==> Track
         elif device_type in self.include_device_types:
-            log_msg = ("Tracking {}/{} ({}), Passed "
+            log_msg = ("Tracking {}/{}({}), Passed "
                         "'include_device_type' filter").format(
                         self.accountname, devicename, device_type) 
             self._LOGGER_info_msg(log_msg)
@@ -3570,7 +3624,7 @@ class Icloud(DeviceScanner):
 
         #devicetype in 'exclude_device_types' parameter ==> Don't Track
         elif device_type in self.exclude_device_types:
-            log_msg = ("Not tracking {}/{} ({}), Failed "
+            log_msg = ("Not tracking {}/{}({}), Failed "
                          "'exclude_device_types' filter ({})").format(
                          self.accountname, devicename, device_type,
                          self.exclude_device_types) 
@@ -3583,7 +3637,7 @@ class Icloud(DeviceScanner):
         elif (not self.include_device_types and
                 not self.exclude_device_types and
                 self.include_devices):
-            log_msg = ("Not tracking {}/{} ({}), Failed "
+            log_msg = ("Not tracking {}/{}({}), Failed "
                         "'include devices' filter ({})").format(
                         self.accountname, devicename,  device_type,
                         self.include_devices) 
@@ -3595,7 +3649,7 @@ class Icloud(DeviceScanner):
         #devicename in 'exclude_device' ==> Don't Track
         elif (self.include_device_types and
                 devicename in self.exclude_devices):
-            log_msg = ("Not tracking {}/{} ({}), Failed "
+            log_msg = ("Not tracking {}/{}({}), Failed "
                         "'include_device_types' filter ({})").format(
                         self.accountname, devicename, device_type,
                         self.include_device_types) 
@@ -3605,13 +3659,13 @@ class Icloud(DeviceScanner):
 
         #unknown device ==> Don't Track
         elif entity_id is None:
-            log_msg = ("Not tracking {}/{} ({}), Unknown device").format(
+            log_msg = ("Not tracking {}/{}({}), Unknown device").format(
                         self.accountname, devicename, device_type) 
             self._LOGGER_info_msg(log_msg)
 
             return False
 
-        log_msg = ("Not tracking {}/{} ({}), Did not match any tracking "
+        log_msg = ("Not tracking {}/{}({}), Did not match any tracking "
                     "filters").format(
                     self.accountname, devicename, device_type) 
         self._LOGGER_info_msg(log_msg)
@@ -3720,7 +3774,7 @@ class Icloud(DeviceScanner):
             use_iosapp_trigger = False
             self._update_poll_count_ignore_attribute(
                 devicename)
-            log_msg = ("{} ({}) Old IOS trigger discarded, Trigger={},"
+            log_msg = ("{}({}) Old IOS trigger discarded, Trigger={},"
                 "TimestampTime={}, Age={}s").format(
                 self.friendly_name.get(devicename),
                 self.device_type.get(devicename),
@@ -3777,8 +3831,7 @@ class Icloud(DeviceScanner):
         return True
   
 #--------------------------------------------------------------------
-    @staticmethod
-    def _setup_sensor_name_prefix(sensor_name_prefix):
+    def _setup_sensor_name_initialize(self, config_sensor_name_prefix):
         '''
         The sensor name prefix can be the devicename, the icloud name or 
         configured for each device by the device name. It is specified by the
@@ -3792,33 +3845,109 @@ class Icloud(DeviceScanner):
             sensor_name_prefix: name
             sensor_name_prefix: devicename (default)
             sensor_name_prefix:
-              - gary_iphone @ gary
-              - lillian_iphone @ lillian
+              - gary_iphone @ gary, /local/gary/jpg
+              - lillian_iphone @ lillian, /local/lillian.jpg
+              
+        Stage 1 - Initial decode of sensor_name_prefix to get default
+        type of name and any custom name/picture. Filling in actual names for
+        the devicename is done in Stage 2 later when they are available.
         '''
-        prefix = {}
-        prefix['prefix'] = 'devicename'
-
-        if sensor_name_prefix:
-            for kv in sensor_name_prefix:
+        
+        #Set default
+        default_base_entity = None 
+        
+        if config_sensor_name_prefix: 
+            #Correct:
+                #['name', 'gary_iphone @ garyc, /local/gary.png',
+                # 'lillian_iphone @  lillianc, /local/lillian.png']
+           
+            #If name is on sensor_prefix_name, line with other devices 
+            #below. It must be resplit it into the correct list values.
+                #['name - gary_iphone @ garyc, /local/gary.png - 
+                #lillian_iphone @  lillianc, /local/lillian.png']  
+            
+            if 'name - ' in config_sensor_name_prefix[0]:
+                config_sensor_name_prefix = \
+                        config_sensor_name_prefix[0].split(' - ')
+                        
+            for kv in config_sensor_name_prefix:
+                kvw = kv.replace(" - ", "", 99)
                 kvw = kv.replace(" ", "", 99)
 
                 if kvw == 'devicename':
-                    prefix['prefix'] = 'devicename'
+                    default_base_entity = 'devicename'
+                    #kvw = kvw.lstrip('devicename - ')
+                    
                 elif kvw == 'name':
-                    prefix['prefix'] = 'name'
-                elif '@' in kvw:
-                    k_v = kvw.split('@')
-                    prefix[k_v[0]] = k_v[1].lower()
+                    default_base_entity = 'name'    
+                   # kvw = kvw.lstrip('name - ') 
+                  
+                if '@' in kvw:
+                    #catch 'name' on config line with custom devices below
+                    if 'name' in kvw:
+                        kvw = kvw.split('-')[1]
+                    badge_attrs = {}
+                    
+                    #Value is 'devicename @ custom_name, custom_picture
+                    #Example  'gary_iphone @ garyc, /local/gary.jpg' or
+                    #         'gary_iphone @ /local/gary.jpg'
+                    dev_name_pict  = kvw.replace(' ','',99).lower().split('@')
+                    devicename     = dev_name_pict[0]
+                    name_pict      = dev_name_pict[1] + ','
+                    name_pict      = name_pict.split(',')
+                    custom_name    = name_pict[0]
+                    custom_picture = name_pict[1]
+                    
+                    if custom_name != '':
+                        if custom_name[0] == "/":
+                            custom_picture = custom_name
+                            custom_name = ''
+                    if custom_name != '':
+                        self.sensor_base_entity[devicename] = \
+                                'sensor.{}'.format(custom_name)
+                    if custom_picture != '':
+                        badge_attrs['entity_picture'] = custom_picture
 
-     
-        return dict(prefix)
+                    self.sensor_badge_attrs[devicename] = badge_attrs
+                    
+        if default_base_entity:
+            self.sensor_base_entity['prefix'] = default_base_entity
         
+        return
+#--------------------------------------------------------------------        
+    def _setup_sensor_name_devicename(self, devicename):
+        '''
+        Stage 2 - Devicenames are now available. Finish setting up sensors.
+        Create the sensor.devicename or sensor.friendlyname base used in
+        the Update Sensors function
+        '''
+ 
+        if devicename not in self.sensor_base_entity:
+            if self.sensor_base_entity.get('prefix') == 'devicename':
+                prefix = devicename
+            elif self.sensor_base_entity.get('prefix') == 'name':
+                prefix = self.friendly_name.get(devicename).lower()
+            else:
+                prefix = devicename
+                
+            self.sensor_base_entity[devicename] = 'sensor.{}'.format(prefix) 
+
+        
+        if self.sensor_badge_attrs.get(devicename):
+            badge_attrs = dict(self.sensor_badge_attrs.get(devicename))
+        else:
+            badge_attrs = {}
+            
+        badge_attrs['friendly_name'] = self.friendly_name.get(devicename)
+        badge_attrs['icon']   = SENSOR_ATTR_ICON.get('badge')
+        self.sensor_badge_attrs[devicename] = badge_attrs
+        return
+    
 #########################################################
 #
 #   WAZE ROUTINES
 #
 #########################################################
-
     def _get_waze_data(self, devicename,
                             this_lat, this_long, last_lat,
                             last_long, current_zone, last_dist_from_home):
@@ -3836,18 +3965,21 @@ class Icloud(DeviceScanner):
                         this_lat, this_long,
                         self.zone_home_lat, self.zone_home_long)
 
-                waze_from_last_poll = self._get_waze_distance(devicename,
-                        last_lat, last_long, this_lat, this_long)
+                waze_status = waze_from_home[0]
+                if waze_status != WAZE_ERROR:
+                    waze_from_last_poll = self._get_waze_distance(devicename,
+                            last_lat, last_long, this_lat, this_long)
+                else:
+                    waze_from_last_poll = [WAZE_ERROR, 0, 0]
 
             except Exception as err:
-                if err == "name 'WazeRouteCalculator' is not defined":
+                if err == "Name 'WazeRouteCalculator' is not defined":
                     self.distance_method_waze_flag = False
                     return (WAZE_NOT_USED, 0, 0, 0)
 
                 return (WAZE_ERROR, 0, 0, 0)
 
-            try:
-                waze_status         =  waze_from_home[0]
+            try:  
                 waze_dist_from_home = self._round_to_zero(waze_from_home[1])
                 waze_time_from_home = self._round_to_zero(waze_from_home[2])
                 waze_dist_last_poll = self._round_to_zero(waze_from_last_poll[1])
@@ -3859,26 +3991,25 @@ class Icloud(DeviceScanner):
 
                 if ((waze_dist_from_home > self.waze_max_distance) or
                      (waze_dist_from_home < self.waze_min_distance)):
-
                     waze_status = WAZE_OUT_OF_RANGE
+                    
             except Exception as err:
-                log_msg = ("►► INTERNAL ERROR (ProcWazeData)")
+                log_msg = ("►►INTERNAL ERROR (ProcWazeData)-{})".format(err))
                 self._LOGGER_error_msg(log_msg)
                 
-                
             log_msg = ("►►WAZE DISTANCES CALCULATED>, "
-              "Status={}, DistFromHome={}, TimeFromHome={}, "
-              " DistLastPoll={}, "
-              "WazeFromHome={}, WazeFromLastPoll={}").format(
-              waze_status, waze_dist_from_home, waze_time_from_home,
-              waze_dist_last_poll, waze_from_home, waze_from_last_poll) 
+                  "Status={}, DistFromHome={}, TimeFromHome={}, "
+                  " DistLastPoll={}, "
+                  "WazeFromHome={}, WazeFromLastPoll={}").format(
+                  waze_status, waze_dist_from_home, waze_time_from_home,
+                  waze_dist_last_poll, waze_from_home, waze_from_last_poll) 
             self._LOGGER_debug_msg(log_msg)
 
             return (waze_status, waze_dist_from_home, waze_time_from_home,
                     waze_dist_last_poll)
                     
         except Exception as err:
-            log_msg = ("►► INTERNAL ERROR (GetWazeData-{})".format(err))
+            log_msg = ("►►INTERNAL ERROR (GetWazeData-{})".format(err))
             self._LOGGER_info_msg(log_msg)
 
             return (WAZE_ERROR, 0, 0, 0)
@@ -3903,38 +4034,138 @@ class Icloud(DeviceScanner):
             from_loc = '{},{}'.format(from_lat, from_long)
             to_loc   = '{},{}'.format(to_lat, to_long)
 
-            route = WazeRouteCalculator.WazeRouteCalculator(
-                    from_loc, to_loc, self.waze_region)
-
-            if route:
-                route_time, route_distance = \
+            retry_cnt = 0
+            while retry_cnt < 3:
+                try:
+                    route = WazeRouteCalculator.WazeRouteCalculator(
+                            from_loc, to_loc, self.waze_region)
+                    
+                    route_time, route_distance = \
                         route.calc_route_info(self.waze_realtime)
-                route_time     = round(route_time, 0)
-                route_distance = round(route_distance, 2)
+                        
+                    route_time     = round(route_time, 0)
+                    route_distance = round(route_distance, 2)
 
-            #no route information so use last data calculated but adjust
-            #waze time by last interval. Calculate time percentage changed
-            #based on interval and calculate adjusted distance. Maybe it will
-            #be close.
-            else:
-                interval_min   = self.interval_seconds.get(devicename) / 60
-                route_time     = self.waze_time.get(devicename) - interval_min
-                dist_factor    = route_time / interval_min
-                route_distance = self.waze_dist.get(devicename) * interval_min
+                    return (WAZE_USED, route_distance, route_time)
 
-            return (WAZE_USED, route_distance, route_time)
-
-        except WazeRouteCalculator.WRCError as exp:
-            log_msg = ("►►Error on retrieving Waze data: {}").format(exp) 
+                except WazeRouteCalculator.WRCError as err:
+                    retry_cnt += 1
+                    log_msg = ("Waze Server Error={}, Retrying (#{})").format(
+                    err, retry_cnt)
+                    self._LOGGER_info_msg(log_msg)
+                    
+            return (WAZE_ERROR, 0, 0)
+            
+        except Exception as err:
+            log_msg = ("►►INTERNAL ERROR (GetWazeDist-{})".format(err))
             self._LOGGER_info_msg(log_msg)
 
             return (WAZE_ERROR, 0, 0)
+#--------------------------------------------------------------------
+    def _get_waze_from_data_history(self, devicename, 
+                        curr_dist_from_home, this_lat, this_long):
+        '''
+        Before getting Waze data, look at all other devices to see
+        if there are any really close. If so, don't call waze but use their 
+        distance & time instead if the data it it passes distance and age
+        tests.
+        
+        The other device's distance from home and distance from last 
+        poll might not be the same as this devices current location
+        but it should be close enough.
+        
+        last_waze_data is a list in the following format:
+           [timestamp, latitudeWhenCalculated, longitudeWhenCalculated,
+                [waze_dist_time_info]]     
+        '''
+        
+        if not self.distance_method_waze_flag:
+            return None
+        elif self.waze_status == WAZE_PAUSED:
+            return None
+                
+        #Don't use another device's Waze data if closer than 5km from home.
+        #Set test parameters for other distance's. Waze info discarded if
+        #too far away or too old.
+        test_distance = curr_dist_from_home * .05
+        if test_distance > 5:
+            test_distance = 5
+            
+        try:
+            for near_devicename in self.last_waze_dist_data:
+                waze_data_other_device = self.last_waze_dist_data.get(
+                                                        near_devicename)
+                #This device doesn't have any Waze data saved.
+                if len(waze_data_other_device) == 0:
+                    continue
+                if len(waze_data_other_device[3]) == 0:
+                    continue
+                    
+                waze_data_timestamp = waze_data_other_device[0]
+                waze_data_latitude  = waze_data_other_device[1]
+                waze_data_longitude = waze_data_other_device[2]
 
-        except KeyError:
-            log_msg = ("►►Error retrieving data from Waze server") 
-            self._LOGGER_info_msg(log_msg)
+                dist_from_other_waze_data = self._calc_distance(
+                            this_lat, this_long,
+                            waze_data_latitude, waze_data_longitude)
 
-            return (WAZE_ERROR, 0, 0)
+                #Get distance from current location and Waze data
+                #If close enough, use it regardless of whose it is
+                if dist_from_other_waze_data < test_distance:
+                    self.waze_data_copied_from[devicename] = near_devicename
+                    log_msg=("{}({}) using Waze history data from {}({}); "
+                            "Distance from home {} km, travel time {} min, "
+                            "distance moved {} km").format(
+                            self.friendly_name.get(devicename),
+                            self.device_type.get(devicename),
+                            self.friendly_name.get(near_devicename),
+                            self.device_type.get(near_devicename),
+                            waze_data_other_device[3][2],
+                            waze_data_other_device[3][1],
+                            waze_data_other_device[3][3])                      
+                    self._LOGGER_info_msg(log_msg)
+                
+                    #Return Waze data (Status, distance, time, dist_moved)
+                    return waze_data_other_device[3]
+                
+        except Exception as err:
+            _LOGGER.exception(err)   
+        return None
+        '''
+        Code I don't want to delete yet!!!!
+        
+        #Don't check against myself or another device that was
+        #copied from me
+        if (devicename == near_devicename):
+            continue
+            
+        elif (devicename == self.waze_data_copied_from.get(
+                    near_devicename)):
+            log_msg=("Not copying Waze data, {} was copied from {}").\
+                    format(near_devicename, devicename)
+            self._LOGGER_debug_msg(log_msg)
+            continue
+
+        dist_from_other_device = self._calc_distance(
+                    this_lat, this_long,
+                    self.last_lat.get(near_devicename),
+                    self.last_long.get(near_devicename))
+    
+        #Don't use if devices are far apart
+        if dist_from_other_device > .05:
+            continue
+           
+        waze_data_timestamp = waze_data_other_device[0]
+        waze_data_latitude  = waze_data_other_device[1]
+        waze_data_longitude = waze_data_other_device[2]
+
+        #Don't use if waze data is more than X minutes old
+        age = round(abs(self._secs_since(waze_data_timestamp)) / 60, 2)
+        if age > test_age:
+            continue
+        '''
+               
+
 #--------------------------------------------------------------------
     def _format_waze_time_msg(self, devicename, waze_time_from_home,
                                 waze_dist_from_home):
@@ -3969,25 +4200,10 @@ class Icloud(DeviceScanner):
                     self.distance_method_waze_flag):
             self.waze_status = WAZE_USED
         else:     
-            self.waze_status               = WAZE_NOT_USED
+            self.waze_status = WAZE_NOT_USED
             self.distance_method_waze_flag = False
             self._LOGGER_info_msg("Waze Route Service not available")
             
-        #Test Waze service using Home zone location, error if not available
-#           try:
-#                from_lat  = self.zone_home_lat
-#                from_long = self.zone_home_long
-#                to_lat    = self.zone_home_lat + 1
-#                to_long   = self.zone_home_long + 1
-#                from_loc  = '{},{}'.format(from_lat, from_long)
-#                to_loc    = '{},{}'.format(to_lat, to_long)
-#
-#                route     = WazeRouteCalculator.WazeRouteCalculator(
-#                                from_loc, to_loc, self.waze_region)
-               
-#            except Exception as err:
-#                self.waze_status               = WAZE_NOT_USED
-#                self.distance_method_waze_flag = False
 
 #########################################################
 #
@@ -4034,7 +4250,8 @@ class Icloud(DeviceScanner):
 #   TIME & DISTANCE UTILITY ROUTINES
 #
 #########################################################
-    def _time_now_seconds(self):
+    @staticmethod
+    def _time_now_seconds():
         ''' Return the epoch seconds in utc time '''
 
         return int(time.time())
@@ -4067,7 +4284,7 @@ class Icloud(DeviceScanner):
 #--------------------------------------------------------------------
     def _secs_to(self, e_seconds):
         return e_seconds - self.this_update_seconds
-#--------------------------------------------------------------------    @staticmethod
+#--------------------------------------------------------------------    
     @staticmethod
     def _time_to_seconds(hhmmss):
         """ Convert hh:mm:ss into seconds """
@@ -4322,15 +4539,23 @@ class Icloud(DeviceScanner):
 
 
         if arg_command_cmd == 'waze':
-            if arg_command_parmlow == 'reset_range':
+            if self.waze_status == WAZE_NOT_USED:
+                arg_command_cmd = ''
+                return
+            elif arg_command_parmlow == 'reset_range':
                 self.waze_min_distance = 0
                 self.waze_max_distance = 99999
-                self.waze_status  = WAZE_USED
-            elif self.waze_status == WAZE_USED:
-                self.waze_status  = WAZE_PAUSED
-            else:
                 self.waze_status = WAZE_USED
-
+            elif arg_command_parmlow == 'toggle':
+                if self.waze_status == WAZE_PAUSED:
+                    self.waze_status = WAZE_USED
+                else:
+                    self.waze_status = WAZE_PAUSED
+            elif arg_command_parmlow == 'pause':
+                self.waze_status = WAZE_USED
+            elif arg_command_parmlow != 'pause':
+                self.waze_status = WAZE_PAUSED
+            
         elif arg_command_cmd == 'zone':     #parmeter is the new zone
             if 'home' in arg_command_parmlow:    #home/not_home is lower case
                 arg_command_parm = arg_command_parmlow
@@ -4398,23 +4623,20 @@ class Icloud(DeviceScanner):
 
             elif arg_command_cmd == 'waze':
                 cmd_type = CMD_WAZE
-                if self.next_update_time[devicename] != 'Paused':
+                if self.waze_status == WAZE_USED:
                     self.next_update_time[devicename]         = ZERO_HHMMSS
                     self.next_update_seconds[devicename]      = 0
                     self.overrideinterval_seconds[devicename] = 0
                     attrs[ATTR_NEXT_UPDATE_TIME]              = ZERO_HHMMSS
-
-                if self.waze_status == WAZE_PAUSED:
-                    attrs[ATTR_WAZE_DISTANCE] = 'WazeOff'
-                    attrs[ATTR_WAZE_TIME]     = ''
-                elif self.next_update_time[devicename] == 'Paused':
-                    ttrs[ATTR_WAZE_DISTANCE] = ''
-                    attrs[ATTR_WAZE_TIME]    = ''
-                else:
-                    attrs[ATTR_WAZE_TIME] = 'Resuming'
-                    self._update_device_icloud('Resuming', devicename)
+                    attrs[ATTR_WAZE_DISTANCE]                 = 'Resuming'
+                    self._update_device_sensors(devicename, attrs)
+                    attrs = {}
                     
-
+                    self._update_device_icloud('Resuming', devicename)
+                else:
+                    attrs[ATTR_WAZE_DISTANCE] = 'Paused'
+                    attrs[ATTR_WAZE_TIME]     = ''
+                   
             elif arg_command_cmd == 'restart':
                 self.restart_icloud_account_request_flag = True
                 attrs[ATTR_INFO] = '● ICLOUD RESTART REQUESTED ●'.\

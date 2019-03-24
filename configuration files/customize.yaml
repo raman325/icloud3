@@ -8,8 +8,6 @@ device_tracker.gary:
   entity_picture: /local/gary.png
 device_tracker.gary_iphone:
   friendly_name: Gary
-sensor.gary_badge:
-  friendly_name: Gary
    
 #########################################################
 #

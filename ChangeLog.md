@@ -2,6 +2,69 @@
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
+#### Version 1.0.2 - 3/24/2019
+
+- Waze Changes:
+
+  - The Waze current location, distance from home, travel time information returned from the Waze route calculator is now being saved. On the next poll of any device using iCloud3 on the same account, the saved data is searched to see if there is any entry that is close to your current location instead of calling the Waze route calculator again. This speeds up the polling process and shares data between devices that are close to each other. 
+
+    *Note:* Only devices on the same iCloud account can share Waze data. In HA, each device_tracker platform operates independently of each other even though they are both using the iCloud3 platform. For example, devices set up in one platform (e.g., account_name: gary_icloud) and devices set up on another platform (e.g., account_name: lillian_iphone) don't know about each other so they can not share Waze data
+
+  - There are times when no distance and travel time is returned from the Waze servers and nothing is displayed in the WazeDist or TravTime fields. iCloud3 will now retry getting data from the Waze servers up to 4 times if this occurs.
+
+  - A status message is now displayed in the WazeDist field if there is a problem (WazeOff, Paused, WazeError, etc.) rather than leaving the field blank.
+
+  - Fixed a problem where Waze could not be toggled on or off using the icloud_command service call.
+
+- Badge Changes:
+
+  - Fixed the problem where the person's picture would not be displayed when the '_badge Sensor' information was changed. Originally, in order to use a badge, you had to set up a template sensor with value_template and entity_picture_template attribute fields and iCloud3 would update the state of the badge after each poll. When iCloud3 did this update, all of the badge's attributes were erased by HA.
+
+    To see the 'Special Sensors' section in the documentation for more information about the '_badge Sensor', go [here](https://github.com/gcobb321/icloud3#special-sensors).
+
+    To fix this, the template sensor is no longer needed and the picture for each person is now specified in the device_tracker: icloud3 platform. 
+
+    - Delete (or rename) the '_badge Sensor'  template sensor you are now using. In the sample configuration files distributed with iCloud3, it is named  *gary_iphone_badge* and *lillian_iphone_badge* in the *sn_badge.yaml* file.
+
+    - Specify the person's picture several ways using the *sensor_prefix_name* or *sensor_badge_picture* parameters:
+
+      - If you are using the sensor_name_prefix parameter, add the person's picture after the custom name. For example:
+
+        ```yaml
+        sensor_name_prefix:
+          - gary_iphone @ garyc, /local/gary.png
+          - lillian_iphone @ lillianc, /local/lillian.png
+        ```
+
+      - If you are not using a custom name but using the default 'devicename' for all of the template sensors, add the new *sensor_badge_prefix* parameter. For example
+
+        ```yeml
+        sensor_badge_picture:
+          - gary_iphone @ /local/gary.png
+          - lillian_iphone @ /local/lillian.png
+        ```
+
+      - You can also continue to use your template sensor and have the value_template attribute point to the actual template sensor created by iCloud3.
+
+        ```yaml
+        - platform: template
+          sensors:
+            gary_badge:  
+              friendly_name: Gary
+              value_template: '{{states.sensor.gary_iphone_badge.state}}'  >>>> iCloud3 sensor with badge info
+              entity_picture_template: /local/gary.png
+        ```
+
+- Fixed the problem where an error message was displayed in the HA log file.
+
+  ```reStructuredText
+  File "/config/custom_components/icloud3/device_tracker.py", line 1233, in _polling_loop_5_sec_device
+  self.iosapp_update_flag[devicename] = False
+  UnboundLocalError: local variable 'devicename' referenced before assignment
+  ```
+
+  
+
 #### Version 1.0.1 - 3/20/2019
 
 - Fixed a problem updating the '_badge' sensor. If the entity 'sensor.devicename_badge' did not exist, an error message was displayed. Now, if it does not exist, one will be created that can be used in your own badge type of sensor as a value_template item; e.g., 
@@ -78,7 +141,7 @@
 4. Add Version information to the iCloud3.py file to support the Custom Control Updater program.
 5. Added a Prerelease directory to the Github Repository for early versions of iCloud3.
 
-##### Version 0.86 - 1/22/2019
+#### Version 0.86 - 1/22/2019
 
 1. Fixed a problem where devices were being excluded when they shouldn't have been. For example: if you had an *include_device: gary* and an *exclude_device: garyold* in the configuration file, gary was not being included in the devices being handled by iCloud3 when it should have been.
 2. Added better support for more than one iCloud3 platform for different Apple iCloud accounts. The attributes now show the correct devices being tracked and the accounts they are associated with.

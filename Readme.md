@@ -103,7 +103,7 @@ iCloud3 has many features not in the base iCloud device_tracker that is part of 
 | ● Config variables | 5 | 22 |
 | ● Attributes | 20 | 35 |
 | ● Service Calls | 4 | 4 + 12 special commands |
-| ● Lines of code | 425 | 4000+ |
+| ● Lines of code | 425 | 4100+ |
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
@@ -172,7 +172,10 @@ device_tracker:
     username: gary_Apple_iCloud_Account_ID 
     password: gary_Apple_iCloud_Account_Password
     account_name: gary_icloud
-    include_device_type: iphone      <<<<< Note: See Configuration below for more info
+    include_device_type: iphone           <<<<< Note: See Configuration below for more info
+    sensor_badge_picture:                 <<<<< Note: See Special Sensor '_badge Sensor' section for more info
+      - gary_iphone @ /local/gary.png
+      - lillian_iphone @ /local/lillian.png
 ```
 
 If you have several devices that are associated with different Apple iCloud accounts, add a second iCloud3 platform with the other iCloud account. Since there may be a chance that a device is associated with several accounts, you should add *include_device* or *exclude_device* statements to the other account configuration.   
@@ -184,16 +187,25 @@ device_tracker:
   - platform: icloud3
     username: gary_Apple_iCloud_Account_ID 
     password: gary_Apple_iCloud_Account_Password
-    account_name: gary_icloud
+    account_name: gary_icloud             <<<<< iCloud account for gary
     include_device_type: iphone
     exclude_device: lillian_iphone
+    sensor_badge_picture:                 <<<<< Note: See Special Sensor '_badge' section for more info
+      - gary_iphone @ /local/gary.png
+      - david_iphone @ /local/david.png
 
 - platform: icloud3
     username: lillian_Apple_iCloud_Account_ID 
     password: lillian_Apple_iCloud_Account_Password
-    account_name: lillian_icloud
+    account_name: lillian_icloud             <<<<< iCloud account for lillian
     include_device: lillian_iphone
+    sensor_badge_picture:                    <<<<< Note: See Special Sensor '_badge' section for more info
+      - lillian_iphone @ /local/lillian.png
 ```
+
+*Note:* When a devices location is polled, the Waze Route Calculator is called to get distance from home, travel time information. The data returned from the Waze Route Calculator is saved. On the next poll of any device using iCloud3 on the same account, the saved data is searched to see if there is any entry that is close to your current location instead of calling the Waze Route Calculator again
+
+Only devices on the same iCloud account can share Waze data. In HA, each device_tracker platform operates independently of each other even though they are both using the iCloud3 platform. For example, devices set up in one platform (e.g., account_name: gary_icloud) and devices set up on another platform (e.g., account_name: lillian_iphone) don't know about each other so they can not share Waze data
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
@@ -284,8 +296,40 @@ The number minutes of with little movement minutes before the device will be put
 **sensor_name_prefix**  
 Sensors contain the same values as the device_tracker attributes and are created and updated by iCloud3.  A sensor's value is a state value; it is easier to refer to, does not require HA to decode templates to extract the device_tracer's attribute and additional, non-attribute sensors can be made available. They will trigger automations, can be used in conditions and are easily displayed on lovelace cards.
 
-Example sensors are  ``` sensor.gary_iphone_distance ``` or ``` sensor.gary_iphone_zone ```. The ``` gary_iphone ``` part of the name is the sensor prefix. It can be the device's name (``` gary_iphone ```), the iCloud device name (``` gary ```) or a custom name such as ``` garyc ```. See the Sensors section below for more information on the different types of sensors and different ways to set up the sensor prefix.
+Example sensors are  ``` sensor.gary_iphone_distance ``` or ``` sensor.gary_iphone_zone ```. The ``` gary_iphone ``` part of the name is the sensor prefix. It can be the device's name (``` gary_iphone ```), the iCloud device name (``` gary ```) or a custom name such as ``` garyc ```. See the Sensors section [here](https://github.com/gcobb321/icloud3#sensors-created-from-device-attributes) for more information on the different types of sensors and different ways to set up the sensor prefix.An example of the format is:
+
+```yaml
+sensor_prefix_name: name
+
+-- or, if you are using a custom name, and the special '_badge' sensors with a picture file name
+
+sensor_name_prefix:
+  - gary_iphone @ garyc, /local/gary.png
+  - lillian_iphone @ lillianc, /local/lillian.png
+  
+-- or, if you are using a custom name and not using any special '_badge' sensors
+
+sensor_name_prefix:
+  - gary_iphone @ garyc
+  - lillian_iphone @ lillianc
+  
+  - devicename @ sensor_prefix_name, badge_picture_file_name
+```
+
 *Valid values: devicename, name, customnamevalue. Default: devicename*  
+
+**sensor_badge_name**  
+The special   '_ badge Sensor' is used to display the zone or distance from home for a person. If you are using the default *devicename* for the sensor prefix and using the '_ badge Sensor' to display the person's picture and zone or distance information, use the *sensor_badge_name* to specify the file name of the picture for each person. 
+
+*Format: '- devicename @ entity_picture_file_name*. An example is:
+
+```
+sensor_badge_name:
+  - gary_iphone @ /local/gary.jpg
+  - lillian_iphone @ /local/lillian.jpg  
+```
+
+*Note:* See the Sensors section [here](https://github.com/gcobb321/icloud3#sensors-created-from-device-attributes) for more information on the '_Badge Sensor'.  
 
 **unit_of_measurement**  
 The unit of measure for distances in miles or kilometers.   
@@ -493,52 +537,9 @@ The following sensors are updated using the device_tracker's attributes values:
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
-### Special Sensors
-
-**_zone_name1, _zone_name2, _zone_name3 Sensors** 
-
-| *_zone value*          | *_zone_name1* | *_zone_name2*          | *_zone_name3*        |
-| ---------------------- | ------------- | :--------------------- | -------------------- |
-| home                   | Home          | Home                   | Home                 |
-| not_home               | Away          | Not Home               | NotHome              |
-| whse                   | Whse          | Whse                   | Whse                 |
-| gary_iphone_stationary | Stationary    | Gary Iphone Stationary | GaryIphoneStationary |
-
-**_badge Sensor**  
-The 'badge' sensor is used to display either the zone or distance from home for a device. Set up a template sensor with the appropriate name and the state value will be updated when the other sensors are updated. Below is an example of the template sensor. The *sensor_name_prefix* is used to name the badge sensor.
-
-```yaml
-- platform: template
-  sensors:
-    gary_iphone_badge:  
-      friendly_name: Gary
-      value_template: ''
-      entity_picture_template: /local/gary.png
-      
-    lillian_iphone_badge:  
-      friendly_name: Lillian
-      value_template: ''
-      entity_picture_template: /local/lillian.png
-```
-
-![badge](screenshots/Badge.jpg)
-
-*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
-
-### Use *sensor.devicename_zone* instead of *device_tracker.devicename state* for zone change
-
-There are times when gps wanders and you receive a zone exit state change when the device has not moved in the middle of the night. The sequence of events that takes place under the covers is (1) a zone change notification is sent by the IOS App based on bad gps information, (2) the device's state and location is changed, (3) triggering an automation that runs when you exit the Home zone. (4) iCloud3 sees the new state and location and processes the data and (5) sees the notification data is old and it was caused an incorrect state change and (6) puts the device back into the Home zone where it belongs. The net effect is HA triggers the automation before iCloud3 gets control so the correction takes place after the automation has already run.
-
-The solution to eliminating this problem is to not trigger automations based on device state changes but to trigger them on zone changes. A *zone* and *last_zone* template sensor, updated by iCloud3, is used to do this. These template sensors are only updated by iCloud3 so they are not effected by incorrect device state changes.  See the example *gary_leaves_zone* automation in the ``` sn_home_away_gary.yaml ``` sample file where the ``` sensor.gary_iphone_zone ``` is used as a trigger. 
-
-
-*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
-
 ### Naming the Sensor
 
 The sensors can be named several ways using new the *sensor_name_prefix* configuration parameter. They can be based on the devicename (default), the iCloud's name, or a custom name for each device. If using a custom name, devices not specified use the default devicename for the prefix.
-
-
 
 Examples of the sensor_name_prefix:
 
@@ -550,13 +551,67 @@ sensor_name_prefix: name             - gary_distance
 sensor_name_prefix:
   - gary_iphone @ garyc              - garyc_distance
   - lillian_iphone @ lillianc        - lillianc_distance
- 
-sensor_name_prefix:
-  - gary_iphone @ garyc              - garyc_distance
-                                     - lillian_iphone_distance
 ```
 
 > The  ``` sn_device_tracker_attributes.yaml ``` file containing the attribute template sensors distributed in the configuration section of the iCloud3 repository must be deleted (or commented out so it will not load). The new version of the  ``` sn_badges ``` sensor template file must be used.
+
+*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
+
+### Special Sensors
+
+##### **_zone_name1, _zone_name2, _zone_name3 Sensors** 
+
+| *_zone value*          | *_zone_name1* | *_zone_name2*          | *_zone_name3*        |
+| ---------------------- | ------------- | :--------------------- | -------------------- |
+| home                   | Home          | Home                   | Home                 |
+| not_home               | Away          | Not Home               | NotHome              |
+| whse                   | Whse          | Whse                   | Whse                 |
+| gary_iphone_stationary | Stationary    | Gary Iphone Stationary | GaryIphoneStationary |
+
+
+
+##### **_badge Sensor**  
+
+The '_badge Sensor' is used to display either the zone or distance from home for a device. It can be created and updated by iCloud3 or you can setup your own template sensor and have the iCloud3 *devicename_badge* used as the source of the value_template field. If you are using iCloud3, the persons picture associated with the device must be specified in the *sensor_name_prefix* or the *sensor_badge_name* configuration parameter. Examples of both methods follow
+
+- If you are using the sensor_name_prefix parameter, add the person's picture after the custom name. For example:
+
+  ```yaml
+  sensor_name_prefix:
+    - gary_iphone @ garyc, /local/gary.png
+    - lillian_iphone @ lillianc, /local/lillian.png
+  ```
+
+- If you are not using a custom name but using the default 'devicename' for all of the template sensors, use the *sensor_badge_prefix* parameter. For example
+
+  ```yeml
+  sensor_badge_picture:
+    - gary_iphone @ /local/gary.png
+    - lillian_iphone @ /local/lillian.png
+  ```
+
+- You can also use your own template sensor and have the value_template attribute point to the actual template sensor created by iCloud3. For example:
+
+  ```yaml
+  - platform: template
+    sensors:
+      gary_badge:  
+        friendly_name: Gary
+        value_template: '{{states.sensor.gary_iphone_badge.state}}'  >>>> iCloud3 sensor with badge info
+        entity_picture_template: /local/gary.png
+  ```
+
+An example of the '_badge Sensor'. is:
+
+![badge](screenshots/Badge.jpg)
+
+*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
+
+### Use *sensor.devicename_zone* instead of *device_tracker.devicename state* for zone change
+
+There are times when gps wanders and you receive a zone exit state change when the device has not moved in the middle of the night. The sequence of events that takes place under the covers is (1) a zone change notification is sent by the IOS App based on bad gps information, (2) the device's state and location is changed, (3) triggering an automation that runs when you exit the Home zone. (4) iCloud3 sees the new state and location and processes the data and (5) sees the notification data is old and it was caused an incorrect state change and (6) puts the device back into the Home zone where it belongs. The net effect is HA triggers the automation before iCloud3 gets control so the correction takes place after the automation has already run.
+
+The solution to eliminating this problem is to not trigger automations based on device state changes but to trigger them on zone changes. A *zone* and *last_zone* template sensor, updated by iCloud3, is used to do this. These template sensors are only updated by iCloud3 so they are not effected by incorrect device state changes.  See the example *gary_leaves_zone* automation in the ``` sn_home_away_gary.yaml ``` sample file where the ``` sensor.gary_iphone_zone ``` is used as a trigger. 
 
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*

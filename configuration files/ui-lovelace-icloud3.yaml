@@ -10,7 +10,7 @@ views:
             title: Status
             column_width: 20%
             entities:
-              - entity: sensor.gary_badge
+              - entity: sensor.gary_iphone_badge
                 name: Gary
               - entity: sensor.garage_door_badge
                 name: GarageState

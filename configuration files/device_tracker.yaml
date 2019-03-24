@@ -10,6 +10,9 @@
   password: !secret icloud_password
   account_name: gary_icloud
   include_device_type: iphone
+  sensor_badge_picture:
+    - gary_iphone @ /local/gary.jpg
+    - lillian_iphone @ /local/lillian.jpg
 
 #----- Other Configuration Variables (set to default values) ----
 #   include_device:
@@ -26,8 +29,11 @@
 #   exclude_device_types: ipad
 #   sensor_name_prefix: name
 #   sensor_name_prefix:
-#    - gary_iphone @ garyc
-#    - lillian_iphone @ lillianc
+#    - gary_iphone @ garyc, /local/gary.jpg
+#    - lillian_iphone @ lillianc, /local/lillian.jpg
+#   sensor_badge_picture:
+#    - gary_iphone @ /local/gary.jpg
+#    - lillian_iphone @ /local/lillian.jpg
 #   stationary_inzone_interval: '30 min'
 #   stationary_still_time: '8 min'
 #   gps_accuracy_threshold: 75
