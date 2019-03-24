@@ -10,7 +10,7 @@
 
 *[Table of Contents](https://github.com/gcobb321/icloud3#table-of-contents)*
 
-*[Download from the Releases tab here](https://github.com/gcobb321/icloud3/releases/tag/v1.0.2)*
+*[Download from the Releases tab here](https://github.com/gcobb321/icloud3/releases)*
 
 ----------
 
