@@ -404,7 +404,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
 
         for account in accounts:
             if account in ICLOUD_ACCOUNTS:
-                ICLOUD_ACCOUNTS[account].service_handler_update_icloud(
+                ICLOUD_ACCOUNTS[account].service_handler_icloud_update(
                                     devicename, command)
 
     hass.services.register(DOMAIN, 'icloud_update', 
@@ -431,7 +431,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
 
         for account in accounts:
             if account in ICLOUD_ACCOUNTS:
-                ICLOUD_ACCOUNTS[account].service_handler_setinterval(           
+                ICLOUD_ACCOUNTS[account].service_handler_icloud_setinterval(           
                                     interval, devicename)
 
     hass.services.register(DOMAIN, 'icloud_set_interval',
@@ -626,7 +626,7 @@ class Icloud(DeviceScanner):
         #Keep distance data to be used by another device if nearby. Also keep
         #source of copied data so that device wo't reclone from the device
         #using it.
-        self.last_waze_dist_data        = {}
+        self.waze_distance_history        = {}
         self.waze_data_copied_from      = {}
         
         self.restart_icloud()
@@ -688,7 +688,8 @@ class Icloud(DeviceScanner):
             self.sensor_base_entity['prefix'] = 'devicename'
             self._setup_sensor_name_initialize(self.sensor_name_prefix)  
             self._setup_sensor_name_initialize(self.sensor_badge_picture) 
-            self.last_waze_dist_data        = {}
+            self.waze_manual_pause_flag = False   #If Paused vid iCloud command
+            self.waze_distance_history        = {}
             self.waze_data_copied_from      = {}
             
             log_msg = ("Waze Settings: Region={}, Realtime={}, "
@@ -805,6 +806,7 @@ class Icloud(DeviceScanner):
                 self.poll_count_icloud[devicename]    = 0
                 self.poll_count_ignore[devicename]    = 0
                 self.data_source[devicename]          = ''
+                self.any_device_being_updated_flag    = False
 
                 #interval, distances, times
                 self.overrideinterval_seconds[devicename] = 0
@@ -2469,8 +2471,12 @@ class Icloud(DeviceScanner):
             elif self.waze_status == WAZE_ERROR:
                 attrs[ATTR_WAZE_DISTANCE] = 'NoRoutes'
             elif self.waze_status == WAZE_OUT_OF_RANGE:
-                attrs[ATTR_WAZE_DISTANCE] = 'Range-{}'.format(
-                        int(waze_dist_from_home))
+                if waze_dist_from_home < 1:
+                    attrs[ATTR_WAZE_DISTANCE] = ''
+                elif waze_dist_from_home < self.waze_min_distance:
+                    attrs[ATTR_WAZE_DISTANCE] = 'DistLow'
+                else:
+                    attrs[ATTR_WAZE_DISTANCE] = 'DistHigh'
             elif dir_of_travel == 'in_zone':
                 attrs[ATTR_WAZE_DISTANCE] = ''
             elif self.waze_status == WAZE_PAUSED:
@@ -2610,7 +2616,10 @@ class Icloud(DeviceScanner):
                         self._round_to_zero(calc_dist_from_home_moved)
                         
             if self.distance_method_waze_flag:
-                if self.waze_status != WAZE_PAUSED:
+                #If waze paused via icloud_command, default to pause
+                if self.waze_manual_pause_flag:
+                    self.waze_status = WAZE_PAUSE
+                else:
                     self.waze_status = WAZE_USED
             else:
                 self.waze_status = WAZE_NOT_USED
@@ -2665,15 +2674,15 @@ class Icloud(DeviceScanner):
                          
                         #Save new Waze data or retimestamp data from another
                         #device.
-                        self.last_waze_dist_data[devicename] = \
+                        self.waze_distance_history[devicename] = \
                                 [self._time_now_seconds(), 
                                 this_lat, this_long, waze_dist_time_info]
                         
                     else:
-                        self.last_waze_dist_data[devicename] = []
+                        self.waze_distance_history[devicename] = []
 
                 except Exception as err:
-                    self.last_waze_dist_data[devicename] = []
+                    self.waze_distance_history[devicename] = []
                     self.waze_status = WAZE_ERROR
                     
         except Exception as err:
@@ -3545,8 +3554,9 @@ class Icloud(DeviceScanner):
             
             if self.waze_data_copied_from.get(devicename) is not None:
                 copied_from = self.waze_data_copied_from.get(devicename)
-                info = '{} ●Waze data copied from {}'.format(info, 
-                        self.friendly_name.get(copied_from))
+                if devicename != copied_from:
+                    info = '{} ●Using Waze data {}'.format(info, 
+                                self.friendly_name.get(copied_from))
 
         except Exception as err:
             log_msg = ("►►INTERNAL ERROR-RETRYING (SetInfoAttr-{})".format(\
@@ -4092,8 +4102,8 @@ class Icloud(DeviceScanner):
             test_distance = 5
             
         try:
-            for near_devicename in self.last_waze_dist_data:
-                waze_data_other_device = self.last_waze_dist_data.get(
+            for near_devicename in self.waze_distance_history:
+                waze_data_other_device = self.waze_distance_history.get(
                                                         near_devicename)
                 #This device doesn't have any Waze data saved.
                 if len(waze_data_other_device) == 0:
@@ -4505,7 +4515,7 @@ class Icloud(DeviceScanner):
         self._LOGGER_info_msg(log_msg)
         
 #--------------------------------------------------------------------
-    def service_handler_update_icloud(self, arg_devicename=None, arg_command=None):
+    def service_handler_icloud_update(self, arg_devicename=None, arg_command=None):
         """
         Authenticate against iCloud and scan for devices.
 
@@ -4545,15 +4555,20 @@ class Icloud(DeviceScanner):
             elif arg_command_parmlow == 'reset_range':
                 self.waze_min_distance = 0
                 self.waze_max_distance = 99999
+                self.waze_manual_pause_flag = False
                 self.waze_status = WAZE_USED
             elif arg_command_parmlow == 'toggle':
                 if self.waze_status == WAZE_PAUSED:
+                    self.waze_manual_pause_flag = False
                     self.waze_status = WAZE_USED
                 else:
+                    self.waze_manual_pause_flag = True
                     self.waze_status = WAZE_PAUSED
             elif arg_command_parmlow == 'pause':
+                self.waze_manual_pause_flag = False
                 self.waze_status = WAZE_USED
             elif arg_command_parmlow != 'pause':
+                self.waze_manual_pause_flag = True
                 self.waze_status = WAZE_PAUSED
             
         elif arg_command_cmd == 'zone':     #parmeter is the new zone
@@ -4564,6 +4579,11 @@ class Icloud(DeviceScanner):
             attrs  = {}
 
             self._wait_if_update_in_process(arg_devicename)
+            self.next_update_time[arg_devicename]         = ZERO_HHMMSS
+            self.next_update_seconds[arg_devicename]      = 0
+            self.overrideinterval_seconds[arg_devicename] = 0
+            self.update_in_process_flag = False
+            
             self._update_device_icloud('Command', arg_devicename)
 
             self.update_in_process_flag = False
@@ -4653,7 +4673,7 @@ class Icloud(DeviceScanner):
         #end for devicename in devs loop
 
 #--------------------------------------------------------------------
-    def service_handler_setinterval(self, arg_interval=None, arg_devicename=None):
+    def service_handler_icloud_setinterval(self, arg_interval=None, arg_devicename=None):
         """
         Set the interval or process the action command of the given devices.
             'interval' has the following options:

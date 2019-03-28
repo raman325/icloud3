@@ -404,7 +404,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
 
         for account in accounts:
             if account in ICLOUD_ACCOUNTS:
-                ICLOUD_ACCOUNTS[account].service_handler_update_icloud(
+                ICLOUD_ACCOUNTS[account].service_handler_icloud_update(
                                     devicename, command)
 
     hass.services.register(DOMAIN, 'icloud_update', 
@@ -431,7 +431,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
 
         for account in accounts:
             if account in ICLOUD_ACCOUNTS:
-                ICLOUD_ACCOUNTS[account].service_handler_setinterval(           
+                ICLOUD_ACCOUNTS[account].service_handler_icloud_setinterval(           
                                     interval, devicename)
 
     hass.services.register(DOMAIN, 'icloud_set_interval',
@@ -626,7 +626,7 @@ class Icloud(DeviceScanner):
         #Keep distance data to be used by another device if nearby. Also keep
         #source of copied data so that device wo't reclone from the device
         #using it.
-        self.last_waze_dist_data        = {}
+        self.waze_distance_history        = {}
         self.waze_data_copied_from      = {}
         
         self.restart_icloud()
@@ -688,7 +688,8 @@ class Icloud(DeviceScanner):
             self.sensor_base_entity['prefix'] = 'devicename'
             self._setup_sensor_name_initialize(self.sensor_name_prefix)  
             self._setup_sensor_name_initialize(self.sensor_badge_picture) 
-            self.last_waze_dist_data        = {}
+            self.waze_manual_pause_flag = False   #If Paused vid iCloud command
+            self.waze_distance_history        = {}
             self.waze_data_copied_from      = {}
             
             log_msg = ("Waze Settings: Region={}, Realtime={}, "
@@ -752,9 +753,8 @@ class Icloud(DeviceScanner):
                 if tracking_flag is False:
                     continue
 
-                self.tracking_devicenames = '{}{}/{}, '.\
-                        format(self.tracking_devicenames, self.accountname, 
-                        devicename)
+                self.tracking_devicenames = '{}{}, '.\
+                        format(self.tracking_devicenames, devicename)
                        
                 self.tracked_devices[devicename]  = device
                 self.device_type[devicename]      = device_type
@@ -770,9 +770,11 @@ class Icloud(DeviceScanner):
                 
                 #Put friendy name in the badge base attrs for devicename
                 self._setup_sensor_name_devicename(devicename)
-                                
-            log_msg = ("Tracking Devices {}").\
-                    format(self.tracking_devicenames[:-2]) 
+            
+            self.tracking_devicenames = '{}--({})'.format(
+                        self.accountname, self.tracking_devicenames[:-2])            
+            log_msg = ("Tracking Devices {}").format(
+                            self.tracking_devicenames) 
             self._LOGGER_info_msg(log_msg)
                                         
             for devicename in self.tracked_devices:
@@ -804,6 +806,7 @@ class Icloud(DeviceScanner):
                 self.poll_count_icloud[devicename]    = 0
                 self.poll_count_ignore[devicename]    = 0
                 self.data_source[devicename]          = ''
+                self.any_device_being_updated_flag    = False
 
                 #interval, distances, times
                 self.overrideinterval_seconds[devicename] = 0
@@ -2468,8 +2471,12 @@ class Icloud(DeviceScanner):
             elif self.waze_status == WAZE_ERROR:
                 attrs[ATTR_WAZE_DISTANCE] = 'NoRoutes'
             elif self.waze_status == WAZE_OUT_OF_RANGE:
-                attrs[ATTR_WAZE_DISTANCE] = 'Range-{}'.format(
-                        int(waze_dist_from_home))
+                if waze_dist_from_home < 1:
+                    attrs[ATTR_WAZE_DISTANCE] = ''
+                elif waze_dist_from_home < self.waze_min_distance:
+                    attrs[ATTR_WAZE_DISTANCE] = 'DistLow'
+                else:
+                    attrs[ATTR_WAZE_DISTANCE] = 'DistHigh'
             elif dir_of_travel == 'in_zone':
                 attrs[ATTR_WAZE_DISTANCE] = ''
             elif self.waze_status == WAZE_PAUSED:
@@ -2609,7 +2616,10 @@ class Icloud(DeviceScanner):
                         self._round_to_zero(calc_dist_from_home_moved)
                         
             if self.distance_method_waze_flag:
-                if self.waze_status != WAZE_PAUSED:
+                #If waze paused via icloud_command, default to pause
+                if self.waze_manual_pause_flag:
+                    self.waze_status = WAZE_PAUSE
+                else:
                     self.waze_status = WAZE_USED
             else:
                 self.waze_status = WAZE_NOT_USED
@@ -2641,7 +2651,7 @@ class Icloud(DeviceScanner):
                 try:
                     #See if another device is close with valid Waze data.
                     #If so, use it instead of calling Waze again.
-                    waze_dist_time_info = self._get_other_device_waze_data(
+                    waze_dist_time_info = self._get_waze_from_data_history(
                             devicename, calc_dist_from_home,
                             this_lat, this_long)  
 
@@ -2664,15 +2674,15 @@ class Icloud(DeviceScanner):
                          
                         #Save new Waze data or retimestamp data from another
                         #device.
-                        self.last_waze_dist_data[devicename] = \
+                        self.waze_distance_history[devicename] = \
                                 [self._time_now_seconds(), 
                                 this_lat, this_long, waze_dist_time_info]
                         
                     else:
-                        self.last_waze_dist_data[devicename] = []
+                        self.waze_distance_history[devicename] = []
 
                 except Exception as err:
-                    self.last_waze_dist_data[devicename] = []
+                    self.waze_distance_history[devicename] = []
                     self.waze_status = WAZE_ERROR
                     
         except Exception as err:
@@ -3544,8 +3554,9 @@ class Icloud(DeviceScanner):
             
             if self.waze_data_copied_from.get(devicename) is not None:
                 copied_from = self.waze_data_copied_from.get(devicename)
-                info = '{} ●Waze data copied from {}'.format(info, 
-                        self.friendly_name.get(copied_from))
+                if devicename != copied_from:
+                    info = '{} ●Using Waze data {}'.format(info, 
+                                self.friendly_name.get(copied_from))
 
         except Exception as err:
             log_msg = ("►►INTERNAL ERROR-RETRYING (SetInfoAttr-{})".format(\
@@ -4061,6 +4072,111 @@ class Icloud(DeviceScanner):
 
             return (WAZE_ERROR, 0, 0)
 #--------------------------------------------------------------------
+    def _get_waze_from_data_history(self, devicename, 
+                        curr_dist_from_home, this_lat, this_long):
+        '''
+        Before getting Waze data, look at all other devices to see
+        if there are any really close. If so, don't call waze but use their 
+        distance & time instead if the data it it passes distance and age
+        tests.
+        
+        The other device's distance from home and distance from last 
+        poll might not be the same as this devices current location
+        but it should be close enough.
+        
+        last_waze_data is a list in the following format:
+           [timestamp, latitudeWhenCalculated, longitudeWhenCalculated,
+                [waze_dist_time_info]]     
+        '''
+        
+        if not self.distance_method_waze_flag:
+            return None
+        elif self.waze_status == WAZE_PAUSED:
+            return None
+                
+        #Don't use another device's Waze data if closer than 5km from home.
+        #Set test parameters for other distance's. Waze info discarded if
+        #too far away or too old.
+        test_distance = curr_dist_from_home * .05
+        if test_distance > 5:
+            test_distance = 5
+            
+        try:
+            for near_devicename in self.waze_distance_history:
+                waze_data_other_device = self.waze_distance_history.get(
+                                                        near_devicename)
+                #This device doesn't have any Waze data saved.
+                if len(waze_data_other_device) == 0:
+                    continue
+                if len(waze_data_other_device[3]) == 0:
+                    continue
+                    
+                waze_data_timestamp = waze_data_other_device[0]
+                waze_data_latitude  = waze_data_other_device[1]
+                waze_data_longitude = waze_data_other_device[2]
+
+                dist_from_other_waze_data = self._calc_distance(
+                            this_lat, this_long,
+                            waze_data_latitude, waze_data_longitude)
+
+                #Get distance from current location and Waze data
+                #If close enough, use it regardless of whose it is
+                if dist_from_other_waze_data < test_distance:
+                    self.waze_data_copied_from[devicename] = near_devicename
+                    log_msg=("{}({}) using Waze history data from {}({}); "
+                            "Distance from home {} km, travel time {} min, "
+                            "distance moved {} km").format(
+                            self.friendly_name.get(devicename),
+                            self.device_type.get(devicename),
+                            self.friendly_name.get(near_devicename),
+                            self.device_type.get(near_devicename),
+                            waze_data_other_device[3][2],
+                            waze_data_other_device[3][1],
+                            waze_data_other_device[3][3])                      
+                    self._LOGGER_info_msg(log_msg)
+                
+                    #Return Waze data (Status, distance, time, dist_moved)
+                    return waze_data_other_device[3]
+                
+        except Exception as err:
+            _LOGGER.exception(err)   
+        return None
+        '''
+        Code I don't want to delete yet!!!!
+        
+        #Don't check against myself or another device that was
+        #copied from me
+        if (devicename == near_devicename):
+            continue
+            
+        elif (devicename == self.waze_data_copied_from.get(
+                    near_devicename)):
+            log_msg=("Not copying Waze data, {} was copied from {}").\
+                    format(near_devicename, devicename)
+            self._LOGGER_debug_msg(log_msg)
+            continue
+
+        dist_from_other_device = self._calc_distance(
+                    this_lat, this_long,
+                    self.last_lat.get(near_devicename),
+                    self.last_long.get(near_devicename))
+    
+        #Don't use if devices are far apart
+        if dist_from_other_device > .05:
+            continue
+           
+        waze_data_timestamp = waze_data_other_device[0]
+        waze_data_latitude  = waze_data_other_device[1]
+        waze_data_longitude = waze_data_other_device[2]
+
+        #Don't use if waze data is more than X minutes old
+        age = round(abs(self._secs_since(waze_data_timestamp)) / 60, 2)
+        if age > test_age:
+            continue
+        '''
+               
+
+#--------------------------------------------------------------------
     def _format_waze_time_msg(self, devicename, waze_time_from_home,
                                 waze_dist_from_home):
         '''
@@ -4098,113 +4214,6 @@ class Icloud(DeviceScanner):
             self.distance_method_waze_flag = False
             self._LOGGER_info_msg("Waze Route Service not available")
             
-#--------------------------------------------------------------------
-    def _get_other_device_waze_data(self, devicename, 
-                        curr_dist_from_home, this_lat, this_long):
-        '''
-        Before getting Waze data, look at all other devices to see
-        if there are any really close. If so, don't call waze but use their 
-        distance & time instead if the data it it passes distance and age
-        tests.
-        
-        The other device's distance from home and distance from last 
-        poll might not be the same as this devices current location
-        but it should be close enough.
-        '''
-        if not self.distance_method_waze_flag:
-            return None
-        elif self.waze_status == WAZE_PAUSED:
-            return None
-                
-        #Don't use another device's Waze data if closer than 5km from home.
-        #Set test parameters for other distance's. Waze info discarded if
-        #too far away or too old.
-        if curr_dist_from_home < 4:
-            test_distance = .5
-            test_age      = 1
-        elif curr_dist_from_home < 6:
-            test_distance = 2
-            test_age      = 2
-        elif curr_dist_from_home < 20:
-            test_distance = 3
-            test_age      = 3
-        else:
-            test_distance = 5
-            test_age      = 6
-         
-        try:
-            for near_devicename in self.last_waze_dist_data:
-                waze_data_other_device = self.last_waze_dist_data.get(
-                                                        near_devicename)
-                #This device doesn't have any Waze data saved.
-                if len(waze_data_other_device) == 0:
-                    continue
-                if len(waze_data_other_device[3]) == 0:
-                    continue
-
-                #Don't check against myself or another device that was
-                #copied from me
-                if (devicename == near_devicename):
-                    continue
-                    
-                elif (devicename == self.waze_data_copied_from.get(
-                            near_devicename)):
-                    log_msg=("Not copying Waze data, {} was copied from {}").\
-                            format(near_devicename, devicename)
-                    self._LOGGER_debug_msg(log_msg)
-                    continue
-  
-                dist_from_other_device = self._calc_distance(
-                            this_lat, this_long,
-                            self.last_lat.get(near_devicename),
-                            self.last_long.get(near_devicename))
-            
-                #Don't use if devices are far apart
-                if dist_from_other_device > .05:
-                    continue
-
-                #last_waze_data is a list in the following format:
-                #   [timestamp, latitudeWhenCalculated, longitudeWhenCalculated,
-                #        [waze_dist_time_info]]        
-                waze_data_timestamp = waze_data_other_device[0]
-                waze_data_latitude  = waze_data_other_device[1]
-                waze_data_longitude = waze_data_other_device[2]
-
-                #Don't use if waze data is more than X minutes old
-                age = round(abs(self._secs_since(waze_data_timestamp)) / 60, 2)
-                if age > test_age:
-                    continue
-
-                dist_from_other_waze_data = self._calc_distance(
-                            this_lat, this_long,
-                            waze_data_latitude, waze_data_longitude)
-
-                #Don't use if waze distance > 5km from my location apart
-                if dist_from_other_waze_data > test_distance:
-                    continue
-
-                self.waze_data_copied_from[devicename] = near_devicename
-                log_msg=("{}({}) Using Waze data from {}({}), "
-                        "Dist {} {}, Time {} min").format(
-                        self.friendly_name.get(devicename),
-                        self.device_type.get(devicename),
-                        self.friendly_name.get(near_devicename),
-                        self.device_type.get(near_devicename),
-                        waze_data_other_device[3][0],
-                        self.unit_of_measurement,
-                        waze_data_other_device[3][1])                      
-                self._LOGGER_info_msg(log_msg)
-                log_msg=("(Distance apart {} {}, Waze Data From {} min ago)").\
-                        format(dist_from_other_device, 
-                        self.unit_of_measurement, age)
-                self._LOGGER_info_msg(log_msg)
-                
-                #Return Waze data (Status, distance, time, dist_moved)
-                return waze_data_other_device[3]
-                
-        except Exception as err:
-            _LOGGER.exception(err)   
-        return None
 
 #########################################################
 #
@@ -4506,7 +4515,7 @@ class Icloud(DeviceScanner):
         self._LOGGER_info_msg(log_msg)
         
 #--------------------------------------------------------------------
-    def service_handler_update_icloud(self, arg_devicename=None, arg_command=None):
+    def service_handler_icloud_update(self, arg_devicename=None, arg_command=None):
         """
         Authenticate against iCloud and scan for devices.
 
@@ -4546,15 +4555,20 @@ class Icloud(DeviceScanner):
             elif arg_command_parmlow == 'reset_range':
                 self.waze_min_distance = 0
                 self.waze_max_distance = 99999
+                self.waze_manual_pause_flag = False
                 self.waze_status = WAZE_USED
             elif arg_command_parmlow == 'toggle':
                 if self.waze_status == WAZE_PAUSED:
+                    self.waze_manual_pause_flag = False
                     self.waze_status = WAZE_USED
                 else:
+                    self.waze_manual_pause_flag = True
                     self.waze_status = WAZE_PAUSED
             elif arg_command_parmlow == 'pause':
+                self.waze_manual_pause_flag = False
                 self.waze_status = WAZE_USED
             elif arg_command_parmlow != 'pause':
+                self.waze_manual_pause_flag = True
                 self.waze_status = WAZE_PAUSED
             
         elif arg_command_cmd == 'zone':     #parmeter is the new zone
@@ -4565,6 +4579,11 @@ class Icloud(DeviceScanner):
             attrs  = {}
 
             self._wait_if_update_in_process(arg_devicename)
+            self.next_update_time[arg_devicename]         = ZERO_HHMMSS
+            self.next_update_seconds[arg_devicename]      = 0
+            self.overrideinterval_seconds[arg_devicename] = 0
+            self.update_in_process_flag = False
+            
             self._update_device_icloud('Command', arg_devicename)
 
             self.update_in_process_flag = False
@@ -4654,7 +4673,7 @@ class Icloud(DeviceScanner):
         #end for devicename in devs loop
 
 #--------------------------------------------------------------------
-    def service_handler_setinterval(self, arg_interval=None, arg_devicename=None):
+    def service_handler_icloud_setinterval(self, arg_interval=None, arg_devicename=None):
         """
         Set the interval or process the action command of the given devices.
             'interval' has the following options:

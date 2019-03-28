@@ -1,4 +1,11 @@
-### iCloud3 Change Log
+## iCloud3 Change Log
+
+#### Version 1.0.3 - 3/28/2019
+
+- Fixed a problem where Waze would sometimes not resume when leaving home if it had been previously paused when traveling towards home and 1km away from home.
+- Fixed a problem where the zone would not change when using the *icloud_update* (i.e., *zone not_home* command) service call in an automation or script.
+- Fixed a problem generating a 'self.any_device_being_updated_flag is undefined' error message.
+- Changed the Waze out-of-range messagedisplayed in the WazeDist field to not display anything if less than 1km from home, *DistLow* if it is less than the *waze_min_distance* configuration parameter and *DistHigh* if greater than the *waze_max_distance* configuration parameter.
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
