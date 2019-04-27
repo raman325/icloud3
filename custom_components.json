@@ -1,6 +1,6 @@
 {
     "icloud3: {
-        "version": "1.0.3",
+        "version": "1.0.4",
         "local_location":  "/custom_components/icloud3/device_tracker.py",
         "remote_location": "https://raw.githubusercontent.com/gcobb321/icloud3/master/custom_components/icloud3/device_tracker.py",
         "visit_repo":      "https://github.com/gcobb321/icloud3/tree/master/custom_components/icloud3",
