@@ -3,7 +3,7 @@
   "name": "iCloud3 Device Tracker",
   "documentation": "https://github.com/gcobb321/icloud3",
   "dependencies": [],
-  "codeowners": ["@gcob321"],
+  "codeowners": ["@gcobb321"],
   "requirements": [
     "pyicloud==0.9.1"
   ]

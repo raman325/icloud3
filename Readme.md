@@ -71,7 +71,18 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 
 iCloud3 uses the GitHub Releases framework to download all the necessary installation files (iCloud3 custom component, documentation, sample configuration files, sample lovelace cards, etc). Go to the 'Releases' tab at the top of this repository, select the version of iCloud3 you want and download the .zip file. 
 
-- HA 89+ -- Create a *config/custom_component/icloud3* directory on the device (Raspberry Pi) running Home Assistant. Copy the  ``` device_tracker.py ```' file into that directory.
+- HA 89+ -- Create a *config/custom_component/icloud3* directory on the device (Raspberry Pi) running Home Assistant and copy the following files into that directory. 
+
+  ```
+  config
+    custom_component
+      icloud3
+        device_tracker.py
+        __init__.py
+        manifest.json
+        service.yaml
+  ```
+
 - HA 88 and earlier --   Create a *config/custom_component/device_tracker* directory on the device (Raspberry Pi) running Home Assistant. Copy the  ``` device_tracker.py ```  file into that directory and rename it ``` to ``` ``` icloud3.py ``` .
 
 *Note:* The WazeRouteCalculator component is use to calculate driving distance and time from your location to your Home zone. Normally, it is installed with the Home Assistant and Hass.io frameworks. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and instal Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from Home. Add the `distance_method: calc` parameter to your device_tracker: icloud3 configuration setup (see more information on this and other parameters later).
@@ -634,26 +645,26 @@ This service allows you to change the way iCloud3 operates. The following parame
 
 | Parameter | Description |
 |-----------|-------------|
-| account_name | account_name of the iCloud3 custom component specified in the Configuration Variables section described at the beginning of this document. *(Required)*|
+|  |  |
 | device_name | Name of the device to be updated. All devices will be updated if this parameter is not specified. *(Optional)* |
 | command | The action to be performed (see below). *(Required)* |
 | parameter | Additional parameters for the command. |
 
 The following describe the commands that are available. 
 
-| Command |  Parameter | Description |
-|---------|------------|-------------|
-| pause |  | Stop updating/locating a device (or all devices). Note: You may want to pause location updates for a device if you are a long way from home or out of the country and it doesn't make sense to continue locating your device. |
-| resume |  | Start updating/locating a device (or all devices) after it has been paused. |
-| resume |  | Reset the update interval if it was overridden the 'icloud_set_interval' service. |
-| pause-resume |  | Toggle pause and resume commands |
-| zone | zonename | Change iCloud3 state to 'zonename' (like the device_tracker.see service call) and immediately update the device interval and location data. Note: Using the device_tracker.see service call instead will update the device state but the new interval and location data will be delayed until the next 15-second polling iteration (rather than immediately). |
-| waze | on | Turn on Waze. Use the 'waze' method to determine the update interval. |
-| waze | off | Turn off Waze. Use the 'calc' method to determine the update interval. |
-| waze | toggle | Toggle waze on or off |
-|  waze | reset_range | Reset the Waze range to the default distances (min=1, max=99999). |
-| info | interval | Show how the interval is determined by iCloud3. This is displayed real time in the `info` attribute field. |
-| info | logging | Toggle writing detailed debug information records to the HA log file. |
+| Command/Parameter |  Description |
+|-----------------|-------------|
+| pause |  Stop updating/locating a device (or all devices). Note: You may want to pause location updates for a device if you are a long way from home or out of the country and it doesn't make sense to continue locating your device. |
+| resume |  Start updating/locating a device (or all devices) after it has been paused. |
+| resume |  Reset the update interval if it was overridden the 'icloud_set_interval' service. |
+| pause-resume |  Toggle pause and resume commands |
+| zone zonename | service call) and immediately update the device interval and location data. Note: Using the device_tracker.see service call instead will update the device state but the new interval and location data will be delayed until the next 15-second polling iteration (rather than immediately). |
+| waze on |  Turn on Waze. Use the 'waze' method to determine the update interval. |
+| waze off |  Turn off Waze. Use the 'calc' method to determine the update interval. |
+| waze toggle |  Toggle waze on or off |
+| waze reset_range | Reset the Waze range to the default distances (min=1, max=99999). |
+| info interval |  Show how the interval is determined by iCloud3. This is displayed real time in the `info` attribute field. |
+| info logging |  Toggle writing detailed debug information records to the HA log file. |
 
 
 ```yaml
@@ -664,7 +675,6 @@ icloud_command_pause_resume_polling:
   sequence:
     - service: device_tracker.icloud_update
       data:
-        account_name: gary_icloud
         command: pause-resume
  
 icloud_command_resume_polling:
@@ -672,7 +682,6 @@ icloud_command_resume_polling:
   sequence:
     - service: device_tracker.icloud_update
       data:
-        account_name: gary_icloud
         command: resume
         
 icloud_command_pause_polling:
@@ -680,7 +689,6 @@ icloud_command_pause_polling:
   sequence:
     - service: device_tracker.icloud_update
       data:
-        account_name: gary_icloud
         command: pause
 
 icloud_command_pause_polling_gary:
@@ -688,7 +696,6 @@ icloud_command_pause_polling_gary:
   sequence:
     - service: device_tracker.icloud_update
       data:
-        account_name: gary_icloud
         device_name: gary_iphone
         command: pause
 
@@ -697,7 +704,6 @@ icloud_command_toggle_waze:
   sequence:
     - service: device_tracker.icloud_update
       data:
-        account_name: gary_icloud
         command: waze toggle
 
 icloud_command_garyiphone_zone_home:
@@ -705,7 +711,6 @@ icloud_command_garyiphone_zone_home:
   sequence:
     - service: device_tracker.icloud_update
       data:
-        account_name: gary_icloud
         device_name: gary_iphone
         command: zone home
         
@@ -714,7 +719,6 @@ icloud_command_garyiphone_zone_not_home:
   sequence:
     - service: device_tracker.icloud_update
       data:
-        account_name: gary_icloud
         device_name: gary_iphone
         command: zone not_home
 ```
@@ -727,7 +731,6 @@ icloud_command_info_interval_formula:
   sequence:
     - service: device_tracker.icloud_update
       data:
-        account_name: gary_icloud
         command: info interval
 
 icloud_command_info_logging_toggle:
@@ -735,7 +738,6 @@ icloud_command_info_logging_toggle:
   sequence:
     - service: device_tracker.icloud_update
       data:
-        account_name: gary_icloud
         command: info logging
 ```
 
@@ -748,7 +750,6 @@ This service allows you to override the interval between location updates to a f
 
 | Parameter | Description |
 |-----------|-------------|
-| account_name | account_name of the iCloud3 custom component specified in the Configuration Variables section described at the beginning of this document. *(Required)* |
 | device_name | Name of the device to be updated. All devices will be updated if this parameter is not specified. *(Optional)* |
 | interval | The interval between location updates. This can be in seconds, minutes or hours. Examples are 30 sec, 45 min, 1 hr,  hrs, 30 (minutes are assumed if no time descriptor is specified). *(Required)* |
 
@@ -760,7 +761,6 @@ icloud_set_interval_15_sec_gary:
   sequence:
     - service: device_tracker.icloud_set_interval
       data:
-        account_name: gary_icloud
         device_name: gary_iphone
         interval: '15 sec'
  
@@ -769,7 +769,6 @@ icloud_set_interval_1_min_gary:
   sequence:
     - service: device_tracker.icloud_set_interval
       data:
-        account_name: gary_icloud
         device_name: gary_iphone
         interval: 1
 
@@ -778,7 +777,6 @@ icloud_set_interval_5_hrs_all:
   sequence:
     - service: device_tracker.icloud_set_interval
       data:
-        account_name: gary_icloud
         interval: '5 hrs'
  
 ```
