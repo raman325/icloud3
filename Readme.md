@@ -71,7 +71,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 
 iCloud3 uses the GitHub Releases framework to download all the necessary installation files (iCloud3 custom component, documentation, sample configuration files, sample lovelace cards, etc). Go to the 'Releases' tab at the top of this repository, select the version of iCloud3 you want and download the .zip file. 
 
-- HA 89+ -- Create a *config/custom_component/icloud3* directory on the device (Raspberry Pi) running Home Assistant and copy the following files into that directory. 
+- HA 0.92+ -- Create a *config/custom_component/icloud3* directory on the device (Raspberry Pi) running Home Assistant. Copy the four component files in the `custom_components-icloud3` Github directory (*device_tracker.py, init.py, manifest.json, service.yaml*)  into that directory so the directory structure looks like:
 
   ```
   config
@@ -83,7 +83,6 @@ iCloud3 uses the GitHub Releases framework to download all the necessary install
         service.yaml
   ```
 
-- HA 88 and earlier --   Create a *config/custom_component/device_tracker* directory on the device (Raspberry Pi) running Home Assistant. Copy the  ``` device_tracker.py ```  file into that directory and rename it ``` to ``` ``` icloud3.py ``` .
 
 *Note:* The WazeRouteCalculator component is use to calculate driving distance and time from your location to your Home zone. Normally, it is installed with the Home Assistant and Hass.io frameworks. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and instal Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from Home. Add the `distance_method: calc` parameter to your device_tracker: icloud3 configuration setup (see more information on this and other parameters later).
 
