@@ -1,6 +1,22 @@
 ## iCloud3 Change Log
 
-#### Version 1.0.3 - 3/28/2019
+#### Version 1.0.4 - June 6, 2019
+
+- **Support for Home Assistant version 0.94.0 released June 6, 2019.**
+
+- Fixed problem where iCloud Service Calls may not be executed for a device when multiple iCloud3 device tracker platforms were set up for different iCloud accounts.
+
+- Fixed a problem where the last update, the next update and last located dates were displayed as a UTC time rather than the local time. This has been fixed. It appears that newer installs of Hass.io that are based on the Hass.io Operating System rather than Raspbian are using UTC for log file times rather than the local time. This was effecting the how times are used and reported.
+
+- Fixed a problem where the Old Location count was being updated twice on the same poll.
+
+- If a device has an old location, it was repolled every 15-seconds to try to establish a good location. This has been changed to 30-seconds. Every 10th time, the interval will be set to 5-minutes. If the the Old Location counter reaches 41or the last good location is more than 30-minutes old and the Old Location counter reaches 21, the device is put into a 'Paused' status and no more polling will be done until it is resumed using the 'icloud_update resume' service call. This might happen in large dead zone or when a device is put into 'airplane' mode with no wifi coverage.
+
+- Began preparations for version 2 of the IOS App.
+
+  
+
+#### Version 1.0.3 - March 28, 2019
 
 - Fixed a problem where Waze would sometimes not resume when leaving home if it had been previously paused when traveling towards home and 1km away from home.
 - Fixed a problem where the zone would not change when using the *icloud_update* (i.e., *zone not_home* command) service call in an automation or script.
@@ -9,7 +25,7 @@
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-#### Version 1.0.2 - 3/24/2019
+#### Version 1.0.2 - March 24, 2019
 
 - Waze Changes:
 
@@ -72,7 +88,7 @@
 
   
 
-#### Version 1.0.1 - 3/20/2019
+#### Version 1.0.1 - March 20, 2019
 
 - Fixed a problem updating the '_badge' sensor. If the entity 'sensor.devicename_badge' did not exist, an error message was displayed. Now, if it does not exist, one will be created that can be used in your own badge type of sensor as a value_template item; e.g., 
 
@@ -84,7 +100,7 @@
 
   
 
-#### Version 1.0.0 - 3/15/2019
+#### Version 1.0.0 - March 15, 2019
 
 - HA 89+ -- Create a *config/custom_component/icloud3* directory on the device (Raspberry Pi) running Home Assistant. Copy the  ``` device_tracker.py ``` file into that directory.
 - HA 88 and earlier --   Create a *config/custom_component/device_tracker* directory on the device (Raspberry Pi) running Home Assistant. Copy the  ``` device_tracker.py ```  file into that directory and rename it ``` to ``` ``` icloud3.py ``` .
@@ -131,7 +147,7 @@
 
 
 
-#### Version 0.86.2 - 1/27/2019
+#### Version 0.86.2 - January 27, 2019
 
 1. The iCloud3 zone state was capitalized’, i.e., *school* went to *School*, *HOME* went to *Home*. The zone’s name as it is in zone.yaml is now used without any reformatting.
 2. If the location data was 'old', an "Error updating device_name" message was displayed in the log file due to inconsistent data. Additional error checking has been added.
@@ -148,7 +164,7 @@
 4. Add Version information to the iCloud3.py file to support the Custom Control Updater program.
 5. Added a Prerelease directory to the Github Repository for early versions of iCloud3.
 
-#### Version 0.86 - 1/22/2019
+#### Version 0.86 - January 22, 2019
 
 1. Fixed a problem where devices were being excluded when they shouldn't have been. For example: if you had an *include_device: gary* and an *exclude_device: garyold* in the configuration file, gary was not being included in the devices being handled by iCloud3 when it should have been.
 2. Added better support for more than one iCloud3 platform for different Apple iCloud accounts. The attributes now show the correct devices being tracked and the accounts they are associated with.

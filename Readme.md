@@ -1,10 +1,14 @@
 # iCloud3  Device Tracker Custom Component  
 
-[![Version](https://img.shields.io/badge/Version-1.0.3-blue.svg "Version")](https://github.com/gcobb321/icloud3)
-[![Released](https://img.shields.io/badge/Released-3/28/2019-blue.svg "Released")](https://github.com/gcobb321/icloud3)
-[![Project Stage](https://img.shields.io/badge/ProjectStage-General.Availability-red.svg "Project Stage")](https://github.com/gcobb321/icloud3)
-[![Type](https://img.shields.io/badge/Type-Custom.Component-orange.svg "Type")](https://github.com/gcobb321/icloud3)
-[![Licensed](https://img.shields.io/badge/Licesned-MIT-green.svg "License")](https://github.com/gcobb321/icloud3)
+[![Version](https://img.shields.io/badge/iCloud3.Version-1.0.4-blue.svg"Version")](https://github.com/gcobb321/icloud3)
+[![Released](https://img.shields.io/badge/Released-6/8/2019-blue.svg"Released")](https://github.com/gcobb321/icloud3)
+
+[![HA Version](https://img.shields.io/badge/Home.Assistant.Version.Supported-0.94.0-orange.svg"Released")](https://github.com/gcobb321/icloud3)
+[![IOS.App Version](https://img.shields.io/badge/IOS.App.Version.Supported-1.5.1-orange.svg"Released")](https://github.com/gcobb321/icloud3)
+
+[![Project Stage](https://img.shields.io/badge/ProjectStage-General.Availability-red.svg"Project Stage")](https://github.com/gcobb321/icloud3)
+[![Type](https://img.shields.io/badge/Type-Custom.Component-green.svg"Type")](https://github.com/gcobb321/icloud3)
+[![Licensed](https://img.shields.io/badge/Licesned-MIT-green.svg"License")](https://github.com/gcobb321/icloud3)
 
 
 
@@ -486,7 +490,7 @@ The status of the device — online if the device is located or offline if polli
 If the device is running in low power mode.
 
 **speed, altitude, course, floor, vertical_accuracy**  
-Device information provided by the iCloud account.  
+Device information provided by the iCloud account.  This information is not verified by iCloud3 and passed along as reported by the IOS pp.
 
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
@@ -496,8 +500,11 @@ Device information provided by the iCloud account.
 **authenticated**  
 When the device's iCloud account was last authenticated.  
 
-**tracked_devices**  
+**tracked devices**  
 The devices that are being tracked based on the 'includes' and 'excludes' specified in the configuration.yaml file.  This will be the same for all devices tracked.  
+
+**account name**  
+Name of the iCloud account associated with the tracked devices.  
 
 **icloud3_version**  
 The version of iCloud3 you are running.  
@@ -521,8 +528,8 @@ automation:
     id: gary_arrives_home
     trigger:
     - platform: state
-      entity_id: sensor.gary_iphone_zone
-      to: 'home'
+      entity_id: sensor.gary_iphone_zone_name1
+      to: 'Home'
     - platform: template
       value_template: '{{states.sensor.gary_iphone_distance.state | float <= 0.2}}'
 ```
