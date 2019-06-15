@@ -1,15 +1,7 @@
 # iCloud3  Device Tracker Custom Component  
 
-[Version](https://img.shields.io/badge/iCloud3.Version-1.0.5-blue.svg"Version")](https://github.com/gcobb321/icloud3)
-[![Released](https://img.shields.io/badge/Released-6/15/2019-blue.svg"Released")](https://github.com/gcobb321/icloud3)
-
-[![HA Version](https://img.shields.io/badge/Home.Assistant.Version.Supported-0.94.0-orange.svg"Released")](https://github.com/gcobb321/icloud3)
-[![IOS.App Version](https://img.shields.io/badge/IOS.App.Version.Supported-1.5.1-orange.svg"Released")](https://github.com/gcobb321/icloud3)
-
-[![Project Stage](https://img.shields.io/badge/ProjectStage-General.Availability-red.svg"Project Stage")](https://github.com/gcobb321/icloud3)
-[![Type](https://img.shields.io/badge/Type-Custom.Component-green.svg"Type")](https://github.com/gcobb321/icloud3)
-[![Licensed](https://img.shields.io/badge/Licesned-MIT-green.svg"License")](https://github.com/gcobb321/icloud3)
-
+*Version: 1.0.5*
+*Release Date: June 15, 2019*
 
 
 *[Table of Contents](https://github.com/gcobb321/icloud3#table-of-contents)*
