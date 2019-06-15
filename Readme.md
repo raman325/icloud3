@@ -1,6 +1,6 @@
 # iCloud3  Device Tracker Custom Component  
 
-[![Version](https://img.shields.io/badge/iCloud3.Version-1.0.5-blue.svg"Version")](https://github.com/gcobb321/icloud3)
+[Version](https://img.shields.io/badge/iCloud3.Version-1.0.5-blue.svg"Version")](https://github.com/gcobb321/icloud3)
 [![Released](https://img.shields.io/badge/Released-6/15/2019-blue.svg"Released")](https://github.com/gcobb321/icloud3)
 
 [![HA Version](https://img.shields.io/badge/Home.Assistant.Version.Supported-0.94.0-orange.svg"Released")](https://github.com/gcobb321/icloud3)
