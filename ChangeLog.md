@@ -1,5 +1,36 @@
 ## iCloud3 Change Log
 
+#### Version 1.0.5 - June 15, 2019
+
+**Significant change - Track devices when the iCloud Location Service is not available**
+
+- When iCloud3 starts, the iCloud account is accessed for device and location information. If the iCloud account can not be access (the Apple iCloud service is down, an error authorization error is returned from the iCloud service, the account can not be found, etc.), iCloud3 will now startup in an *iCloud Disabled Operating Mode*. The following occurs:
+
+  - iCloud3 will rely on HA IOS app to provide Zone Exit, Zone Enter, Background Fetch, Significant Location Update and Manual triggers to know where the device is located.
+  
+  - iCloud3 will not poll the device on a regular basis since it can't accessed the iCloud Find-My-Friends location service. The decreasing interval as you approach home will be not be done. Automations and scripts based on a short distance from home will not trigger. Automations and scripts triggered on a zone change should continue to work.
+  
+  - The devices to be followed must be listed in the *include_devices* configuration parameter. This is described in the iCloud3 documentation [here.](https://github.com/gcobb321/icloud3#user-account-and-device-configuration-items)
+  - The device is not located when HA starts. It may take a few minutes to process the next IOS app notification to locate the device.
+  
+- The *include_device_type & exclude_device_type* configuration parameters will not work since they are used to select devices from an iCloud account. You do not have to remove these entries from the configuration file, they will be ignored.
+  
+- A new configuration parameter, *icloud_disabled* has been added. This can be used to *not* use an iCloud service even if it is available. iCloud3 will then run as described above in the *icloud_disabled* operating mode. 
+
+- iCloud3 can be restarted using the service call  *icloud_update* with the *restart* command or the service call *icloud_reset*. If you did not use the *icloud_disabled* configuration parameter, the iCloud Location Service will be rechecked and used if it is available. 
+
+**Other Changes**
+
+- If there was an error with the iCloud account name in the configuration parameters, no iCloud account would be found and an error message is displayed in the log file.  Displaying this error message generated another error message that is now fixed.
+
+- There was a fix for a problem in v1.0.4 that never made it into the update. The iCloud Service Call (Set Interval, Lost Phone Alert) for a device when multiple iCloud3 device tracker platforms are being used now works as expected.
+
+- Removed a log file warning message related to time zones.
+
+- If no devices were set up for a valid account, no error message was displayed. However, the error *'Icloud' object has no attribute 'any_device_being_updated_flag'* was. This has been fixed.
+
+  
+
 #### Version 1.0.4 - June 6, 2019
 
 - **Support for Home Assistant version 0.94.0 released June 6, 2019.**

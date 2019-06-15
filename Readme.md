@@ -1,7 +1,7 @@
 # iCloud3  Device Tracker Custom Component  
 
-[![Version](https://img.shields.io/badge/iCloud3.Version-1.0.4-blue.svg"Version")](https://github.com/gcobb321/icloud3)
-[![Released](https://img.shields.io/badge/Released-6/8/2019-blue.svg"Released")](https://github.com/gcobb321/icloud3)
+[![Version](https://img.shields.io/badge/iCloud3.Version-1.0.5-blue.svg"Version")](https://github.com/gcobb321/icloud3)
+[![Released](https://img.shields.io/badge/Released-6/15/2019-blue.svg"Released")](https://github.com/gcobb321/icloud3)
 
 [![HA Version](https://img.shields.io/badge/Home.Assistant.Version.Supported-0.94.0-orange.svg"Released")](https://github.com/gcobb321/icloud3)
 [![IOS.App Version](https://img.shields.io/badge/IOS.App.Version.Supported-1.5.1-orange.svg"Released")](https://github.com/gcobb321/icloud3)
@@ -174,6 +174,23 @@ Note: Special characters (’-’) get mapped to ‘_’ by HA and must be accou
 I could have set the iPhone name to Gary_iPhone but didn’t
 ```
 
+#### What happens if the iCloud Location Service is not available or I don't want to use it
+
+When iCloud3 starts, the iCloud account is accessed for device and location information. If the iCloud account can not be accessed (the Apple iCloud service is down, an error authorization error is returned from the iCloud service, the account can not be found, the account name and password are not correct, etc.), iCloud3 will now startup in an *iCloud Disabled Operating Mode*. The following occurs:
+
+- iCloud3 will rely on HA IOS app to provide Zone Exit, Zone Enter, Background Fetch, Significant Location Update and Manual triggers to know where the device is located.
+
+- iCloud3 will not poll the device on a regular basis since it can't access the iCloud Find-My-Friends location service. The decreasing interval as you approach home will be not be done. Automations and scripts based on a short distance from home will not trigger. Automations and scripts triggered on a zone change should continue to work.
+
+- The devices to be followed must be listed in the *include_devices* configuration parameter. This is described in the documentation below in the Configuration Parameter section.
+- The device is not located when HA starts. It may take a few minutes to process the next IOS app notification to locate the device.
+
+- The *include_device_type & exclude_device_type* configuration parameters will not work since they are used to select devices from an iCloud account. You do not have to remove these entries from the configuration file, they will be ignored.
+
+  If you do not want to use the iCloud Location Service even if it is available, set the  *icloud_disabled* to *True*. iCloud3 will then run as described above in the *icloud_disabled* operating mode. 
+
+  iCloud3 can be restarted using the service call  *icloud_update* with the *restart* command or the service call *icloud_reset*. If you did not use the *icloud_disabled* configuration parameter, the iCloud Location Service will be rechecked and used if it is available. 
+
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
 ### Home Assistant Configuration
@@ -288,7 +305,13 @@ exclude_device:
 
 *Note:* It is recommended that to you specify the devices or the device types you want to track to avoid confusion or errors. All of the devices you are tracking are shown in the `devices_tracked ` attribute. 
 
-[Special Note for iCloud2 Users: It is recommended that the *filter_type* configuration  entry be changed to *include_devices*.](https://github.com/gcobb321/icloud3)
+[Special Note for iCloud2 Users: It is recommended that the *filter_type* configuration  entry be changed to *include_devices*. (https://github.com/gcobb321/icloud3)  
+
+**icloud_disabled**  
+Disable the iCloud Location Service, even if it is available.  
+*Valid values: True, False.  Default: False*
+
+
 
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
@@ -671,6 +694,7 @@ The following describe the commands that are available.
 | waze reset_range | Reset the Waze range to the default distances (min=1, max=99999). |
 | info interval |  Show how the interval is determined by iCloud3. This is displayed real time in the `info` attribute field. |
 | info logging |  Toggle writing detailed debug information records to the HA log file. |
+| restart |  Restart iCloud3. Detect any new devices, recheck the availability of the iCloud Location Service, relocate all devices, etc. |
 
 
 ```yaml
@@ -728,7 +752,16 @@ icloud_command_garyiphone_zone_not_home:
         device_name: gary_iphone
         command: zone not_home
 ```
+```yaml
+#Commands to Restart iCloud3
 
+icloud_command_restart:
+  alias: 'iCloud3 Restart'
+  sequence:
+    - service: device_tracker.icloud_update
+      data:
+        command: restart
+```
 ```yaml
 #Commands to Generate Detailed Information on iCloud3's Operations
 
@@ -793,15 +826,10 @@ This service will play the Lost iPhone sound on a specific device.
 
 | Parameter | Description |
 |-----------|-------------|
-| account_name | account_name of the iCloud3 custom component specified in the Configuration Variables section described at the beginning of this document. *(Required)* |
 | device_name | Name of the device *(Required)* |
 
 ### *icloud_restart* Service -- Restart the iCloud3 Component
-This service will refresh all of the devices being handled by iCloud3 and can be used when you have added a new device to your Apple account. You will have to restart Home Assist if you have made changes to the platform parameters (new device type, new device name, etc.) 
-
-| Parameter | Description |
-|-----------|-------------|
-| account_name | account_name of the iCloud3 custom component specified in the Configuration Variables section described at the beginning of this document. *(Required)* |
+This service will restart iCloud3 and refresh all of the devices being handled by iCloud3. It does the same action as the *icloud_command* with the *refresh* option described above. You will have to restart Home Assist if you have made changes to the configuration parameters (new device type, new device name, etc.) 
 
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
