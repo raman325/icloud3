@@ -659,7 +659,6 @@ class Icloud(DeviceScanner):
         try:
             self.tracking_devicenames = ''
             if self.icloud_disabled_flag:
-
                 #create tracked devices from include_devices and
                 #sensor_devicenames
                 self.tracked_devices = []
@@ -670,11 +669,22 @@ class Icloud(DeviceScanner):
                     if devicename not in self.tracked_devices:
                         self.tracked_devices.append(devicename)
 
+                #extract friendly_name and device_type from tracked_devices
                 for devicename in self.tracked_devices:
-                    #Make the first name from devicename:,i.e. 'gary_iphone'
-                    user_name = devicename.split("_")
-                    self.friendly_name[devicename] = user_name[0].title()
-                    self.device_type[devicename]   = user_name[1]
+                    fname = devicename
+                    dtype = ''
+                    for dev_type in ['iphone', 'ipad', 'ipod', 'watch', 'iwatch']:
+                        dev_pos = devicename.find(dev_type) 
+                        if dev_pos > 0:
+                            fnamew = devicename[0:dev_pos]
+                            fname  = fnamew.replace("_", "", 99)
+                            fname  = fname.replace("-", "", 99)
+                            dtype  = devicename[dev_pos:]
+                            break
+
+                    self.friendly_name[devicename] = fname.title()
+                    self.device_type[devicename]   = dtype
+                    
                     self.tracking_device_flag[devicename] = True
                     self.tracking_devicenames = '{},{} '.format(
                             self.tracking_devicenames, devicename)
@@ -4029,7 +4039,7 @@ class Icloud(DeviceScanner):
         self.sensor_base_entity       = {}
         self.sensor_entity_iosapp     = {}
         self.sensor_base_entity['prefix'] = 'devicename'
-
+        
         self._setup_sensor_name_initialize(self.sensor_name_prefix)
         self._setup_sensor_name_initialize(self.sensor_badge_picture)
 
@@ -4480,7 +4490,7 @@ class Icloud(DeviceScanner):
 
                     if devicename not in self.sensor_devicenames:
                         self.sensor_devicenames.append(devicename)
-
+                    
                     if custom_name != '':
                         if custom_name[0] == "/":
                             custom_picture = custom_name
