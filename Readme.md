@@ -175,13 +175,18 @@ When iCloud3 starts, the iCloud account is accessed for device and location info
 
 - iCloud3 will not poll the device on a regular basis since it can't access the iCloud Find-My-Friends location service. The decreasing interval as you approach home will be not be done. Automations and scripts based on a short distance from home will not trigger. Automations and scripts triggered on a zone change should continue to work.
 
-- The devices to be followed must be listed in the *include_devices* configuration parameter. This is described in the documentation below in the Configuration Parameter section.
+- The devices to be tracked are extracted from those listed in the *include_devices, sensor_name_prefix and sensor_badge_picture* configuration parameters. This is described in the documentation below in the Configuration Parameter section.
+
 - The device is not located when HA starts. It may take a few minutes to process the next IOS app notification to locate the device.
 
 - The *include_device_type & exclude_device_type* configuration parameters will not work since they are used to select devices from an iCloud account. You do not have to remove these entries from the configuration file, they will be ignored.
 
-  If you do not want to use the iCloud Location Service even if it is available, set the  *icloud_disabled* to *True*. iCloud3 will then run as described above in the *icloud_disabled* operating mode. 
+  
 
+  Note: The Authorization Failed error message will continue to be displayed since iCloud3 still requests the devices in the Apple iCloud account and uses this error to continue in the *iCloud Disabled Mode*.
+  
+  If you do not want to use the iCloud Location Service even if it is available, set the  *icloud_disabled* to *True*. iCloud3 will then run as described above in the *icloud_disabled* operating mode. 
+  
   iCloud3 can be restarted using the service call  *icloud_update* with the *restart* command or the service call *icloud_reset*. If you did not use the *icloud_disabled* configuration parameter, the iCloud Location Service will be rechecked and used if it is available. 
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
