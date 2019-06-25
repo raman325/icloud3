@@ -1,7 +1,7 @@
 # iCloud3  Device Tracker Custom Component  
 
-- Version:  1.0.5
-- Released:  June 15, 2019
+- Version:  1.0.6
+- Released:  June 25, 2019
 
 ------
 
@@ -260,6 +260,21 @@ The Device Name field of the device in Settings App>General>About>Name field on 
 
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
+
+
+
+### HACS (Home Assistant Community Store)
+
+HACS is a custom component that monitors update to other custom components, lovelace custom cards, etc. iCloud3 will be listed on the store shortly. However, additional repositories can be added under the settings window and those repositories will also be monitored. The iCloud3 repository is structured to support HACS usage. To add iCloud3, 
+
+1. Go to Settings.
+2. , Add *gcobb321/icloud3* to the Add Custom Repository field.
+3. Select *Integration* in the Type list.
+4. Click the Save icon.   
+
+Installation instructions and all of the documentation for HACS is found [here](https://github.com/custom-components/hacs).
+
+
 
 ## CONFIGURATION VARIABLES
 
@@ -1257,6 +1272,10 @@ exclude_device:
 Disable the iCloud Location Service, even if it is available.  
 *Valid values: True, False.  Default: False*
 
+**max_iosapp_locate_cnt**  
+When iCloud Location Services are disabled, iCloud3 will request location information from the IOS App using the HA the *notify service* with a *request_location_update* message. There is a limit of 150 messages that can be sent in one day. iCloud3 will stop sending these requests when the message count exceeds 150 or this value.  
+*Valid values: 0-150.  Default: 100*
+
 
 
 
@@ -1641,6 +1660,7 @@ The following describe the commands that are available.
 | info interval |  Show how the interval is determined by iCloud3. This is displayed real time in the `info` attribute field. |
 | info logging |  Toggle writing detailed debug information records to the HA log file. |
 | restart |  Restart iCloud3. Detect any new devices, recheck the availability of the iCloud Location Service, relocate all devices, etc. |
+| locate | Issue a 'request_location_update' from the device using the notify.ios_devicename or notify.mobile_app_devicename service. The timing of the response is hit-or-miss since it is based on if the IOS app is loaded, if it is running in the background, if the device is asleep and other factors. Each notify counts towards the daily 150 message limit. |
 
 
 ```yaml

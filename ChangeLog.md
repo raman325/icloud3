@@ -1,5 +1,29 @@
 ## iCloud3 Change Log
 
+#### Version 1.0.6 - June 25
+
+- Added the ability for iCloud3 to request a location update from the HA IOS App using the *notify.ios_devicename* service call with the *request_location_update* message. This will occur when the *next_update* time is reached just like iCloud Location Services is called when it is available.
+
+- Added the ability to manually issue a locate using the *icloud_update* service with the *locate* command.
+
+  *Note 1: Each time the 'request_location_update' message is sent, it counts towards the 150 daily limit on the number of notifications that can be sent to a device. There is a limit of 100 requests that can be issued, although this can be changed using the 'max_iosapp_locate_cnt' configuration parameter*.
+
+  *Note 2: Here is the description of the 'request_location_update' from the Home Assistant Documentation:*
+
+  ​		"Assuming the device receives the notification, it will attempt to get a location update within 5 seconds and report it to Home Assistant. This is a little bit hit or miss since Apple imposes a maximum time allowed for the app to work with the notification and location updates sometimes take longer than usual due to factors such as waiting for GPS acquisition."
+
+  *Additionally, the location updates may take a while if the phone is in a dead area or not the IOS App is not loaded or is running in the background.*
+
+  
+
+  **Status on accessing the Apple iCloud Location Service again**
+
+  The *pyicloud.py* program acts as the interface between iCloud3 (and other programs and components) to the Apple iCloud servers. Apple recently changed the way devices and computers request authorization to access your account for location information and to trust the device that wants access. Changes have been made to *pyicloud.py* and iCloud3 can now access your account and get device information and location updates. 
+
+  But, it asks for an authorization each time it wants information. That often, but not always, causes the two authorization windows to open on every device associated with your account. The first one displays a map and says your device was used at a certain location and the second displays the a 6-digit authorization code. We've all seen these windows and they have to be closed each time. I've used it for a day and it is annoying to say the least. There is some more work to be done before it is ready for general availability but progress is being made. 
+
+  
+
 #### Version 1.0.5 - June 15, 2019
 
 **Significant change - Track devices when the iCloud Location Service is not available**

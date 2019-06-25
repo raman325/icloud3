@@ -16,19 +16,17 @@ open_garage_door:
   alias: 'Open Garage Door'
   sequence:
     
-    - condition: state
-      entity_id: input_boolean.ha_started_flag
-      state: 'on'
+    #- condition: state
+    #  entity_id: input_boolean.ha_started_flag
+    #  state: 'on'
       
     - condition: state
       entity_id: sensor.garage_door
       state: 'Closed'
       
-    - condition: numeric_state
-      entity_id: device_tracker.gary_iphone
-      value_template: '{{float(state.attributes.distance)}}'
-      below: .30
-      
+    - condition: template 
+      value_template: '{{states.sensor.gary_iphone_distance.state  | float <= 0.30}}'
+   
     - condition: state
       entity_id: input_boolean.gary_driving_flag
       state: 'on'
@@ -42,7 +40,7 @@ open_garage_door:
     - service: switch.turn_on
       entity_id: switch.garage_door
 
-    - service: notify.ios_gary_iphone
+    - service: script.notify_gary_iphone
       data_template:
         title: 'Garage Door Action'
         message: 'Garage Door Opened'
@@ -51,7 +49,7 @@ open_garage_door:
 show_garage_door_status:
   alias: 'Show Garage Door Status'
   sequence:
-    - service: notify.ios_gary_iphone
+    - service: script.notify_gary_iphone
       data_template:
         title: 'Garage Door Control Status'
-        message: 'Door={{ states.sensor.garage_door.state }}, Driving Flag={{ states.input_boolean.gary_driving_flag.state }}, Distance={{ states.sensor.gary_iphone_distance.state }}, FarAway={{ states.input_boolean.gary_far_away_flag.state }}, dt.GiPhone=<{{ states.device_tracker.gary_iphone.state }}>, dt.Gary=<{{ states.device_tracker.gary.state }}>, SenorGaryBadge=<{{ states.sensor.gary_badge.state }}>, HA={{ states.input_boolean.ha_started_flag.state }}'
+        message: 'Door={{states.sensor.garage_door.state}},  DriveFlag={{states.input_boolean.gary_driving_flag.state}}, Distance={{states.sensor.gary_iphone_distance.state}}, FarAway={{states.input_boolean.gary_far_away_flag.state}}, Zone=<{{states.sensor.gary_iphone_zone.state }}'

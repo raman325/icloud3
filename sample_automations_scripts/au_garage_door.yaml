@@ -26,7 +26,7 @@
     - service: switch.turn_on
       entity_id: switch.garage_door
       
-    - service: notify.ios_gary_iphone
+    - service: script.notify_gary_iphone
       data:
         title: Garage Door Closed
         message: After 8pm - Close Door Automation Triggered
@@ -50,7 +50,7 @@
     - service: switch.turn_on
       entity_id: switch.garage_door
       
-    - service: notify.ios_gary_iphone
+    - service: script.notify_gary_iphone
       data:
         title: Garage Door Closed
         message: No One Home - Close Door Automation Triggered
