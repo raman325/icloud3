@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '1.1.0b1'      #Custom Component Updater
+VERSION = '1.1.0b2'      #Custom Component Updater
 
 import logging
 import os
@@ -197,14 +197,16 @@ TRACE_ICLOUD_ATTRS_BASE = {CONF_NAME: '', 'deviceStatus': '',
                            ATTR_LOC_TIMESTAMP: 0, 'horizontalAccuracy': 0,
                           'positionType': 'Wifi'}
 
-SENSOR_DEVICE_ATTRS     = ['zone', 'last_zone', 'zone_timestamp',
+SENSOR_DEVICE_ATTRS     = ['zone', 'zone_name1', 'zone_name2', 'zone_name3',
+                           'last_zone', 'last_zone_name1', 'last_zone_name2',
+                           'last_zone_name3', 'zone_timestamp',
                            'home_distance', 'calc_distance', 'waze_distance',
                            'travel_time', 'dir_of_travel', 'interval', 'info',
                            'last_located', 'last_update', 'next_update',
                            'poll_count', 'travel_distance', 'trigger',
                            'battery', 'battery_status', 'gps_accuracy',
                            'speed', 'speed_high', 'speed_average',
-                           'altitude', 'badge', 'event_log']
+                           'speed_summary', 'altitude', 'badge', 'event_log']
 
 SENSOR_ATTR_FORMAT      = {'home_distance': 'dist',
                            'calc_distance': 'dist',
@@ -245,34 +247,23 @@ SENSOR_ATTR_ICON        = {'zone': 'mdi:cellphone-iphone',
                            'gps_accuracy': 'mdi:map-marker-radius',
                            'badge': 'mdi:shield-account',
                            'entity_log': 'mdi:format-list-checkbox'}
-SENSOR_ID_NAME_LIST     = {'zon': 'zone',
-                           'zon1': 'zone1',
-                           'zon2': 'zone2',
-                           'lzon': 'last_zone',
+SENSOR_ID_NAME_LIST     = {'zon': 'zone', 'zon1': 'zone_name1',
+                           'zon2': 'zone_name2','zon3': 'zone_name3',
+                           'lzon': 'last_zone', 'lzon1': 'last_zone_name1',
+                           'lzon2': 'last_zone_name2', 'lzon3': 'last_zone_name3',
                            'zonts': 'zone_timestamp',
-                           'hdis': 'home_distance',
-                           'cdis': 'calc_distance',
+                           'hdis': 'home_distance', 'cdis': 'calc_distance',
                            'wdis': 'waze_distance',
-                           'tdis': 'travel_distance',
-                           'ttim': 'travel_time',
-                           'dir': 'dir_of_travel',
-                           'intvl':  'interval',
-                           'lloc': 'last_located',
-                           'lupdt': 'last_update',
+                           'tdis': 'travel_distance', 'ttim': 'travel_time',
+                           'dir': 'dir_of_travel', 'intvl':  'interval',
+                           'lloc': 'last_located', 'lupdt': 'last_update',
                            'nupdt': 'next_update',
-                           'cnt': 'poll_count',
-                           'info': 'info',
-                           'trig': 'trigger',
-                           'bat': 'battery',
-                           'spd': 'speed',
-                           'spdhi': 'speed_high',
-                           'spdavg': 'speed_average',
-                           'spdsumm': 'speed_summary',
-                           'alt': 'altitude',
-                           'batsta': 'battery_status',
-                           'gpsacc': 'gps_accuracy',
-                           'badg': 'badge',
-                           'elog': 'entity_log'}
+                           'cnt': 'poll_count',  'info': 'info',
+                           'trig': 'trigger', 'bat': 'battery',
+                           'spd': 'speed', 'spdhi': 'speed_high',
+                           'spdavg': 'speed_average', 'spdsum': 'speed_summary',
+                           'alt': 'altitude', 'gpsacc': 'gps_accuracy',
+                           }
 
 
 ATTR_TIMESTAMP_FORMAT    = '%Y-%m-%dT%H:%M:%S.%f'
@@ -728,7 +719,7 @@ class Icloud(DeviceScanner):
         self._LOGGER_info_msg(event_msg)
         
         log_msg = ("iCloud3 Tracking Method: {}").format(self.mode_name)
-        self._LOGGER_warning_msg(log_msg)
+        self._LOGGER_info_msg(log_msg)
         self._save_event("*", log_msg)
         
         if (PYICLOUD_IC3_IMPORT_SUCCESSFUL == False and \
@@ -833,7 +824,7 @@ class Icloud(DeviceScanner):
                             self.fmf_devicename_email.get(devicename))
                     self._save_event("*", event_msg)
                     self._LOGGER_info_msg(event_msg)
-            
+
             #nothing to do if no devices to track
             if self.track_devicename_list == '':
                 log_msg = ("iCloud3 Setup Aborted, no devices to track")
@@ -853,15 +844,15 @@ class Icloud(DeviceScanner):
 
             self.track_devicename_list = '{}'.format(
                             self.track_devicename_list[1:])
-            log_msg = ("Tracking Devices {}").format(
+            log_msg = ("Tracking Devices{}").format(
                             self.track_devicename_list)
             self._LOGGER_info_msg(log_msg)
             self._save_event("*", log_msg)
 
             #Now we know tracked devices, associate them with the iosapp
             #devices
-            self._xxx_setup_devicename_iosapp()
             self._setup_sensor_base_attrs()
+            self._setup_sensors_custom_list()
             
             for devicename in self.tracked_devices:
                 event_msg = ("iCloud3 Initalization, Stage 3, "
@@ -4035,8 +4026,6 @@ class Icloud(DeviceScanner):
         try:
             if not attrs:
                 return
-            #elif devicename is None:
-            #    return
 
             badge_value = None
             base_entity = self.sensor_base_entity.get(devicename)
@@ -4048,53 +4037,62 @@ class Icloud(DeviceScanner):
                 else:
                     continue
 
-                sensor_attr = {}
+                sensor_attrs = {}
                 if attr_name in SENSOR_ATTR_FORMAT:
                     format_type = SENSOR_ATTR_FORMAT.get(attr_name)
                     if format_type == "dist":
-                        sensor_attr['unit_of_measurement'] = \
+                        sensor_attrs['unit_of_measurement'] = \
                                 self.unit_of_measurement
                         value = round(value, 2) if value else 0.00
 
                     elif format_type == "diststr":
                         if value and '.' in str(value):
                             value = round(value, 2)
-                            sensor_attr['unit_of_measurement'] = \
+                            sensor_attrs['unit_of_measurement'] = \
                                 self.unit_of_measurement
                         else:
-                            sensor_attr['unit_of_measurement'] = ''
+                            sensor_attrs['unit_of_measurement'] = ''
                     elif format_type == "%":
-                        sensor_attr['unit_of_measurment'] = '%'
+                        sensor_attrs['unit_of_measurment'] = '%'
                     elif format_type == 'title':
                         value = value.title().replace('_', ' ')
                     elif format_type == 'kph-mph':
-                        sensor_attr['unit_of_measurement'] = self.um_kph_mph
+                        sensor_attrs['unit_of_measurement'] = self.um_kph_mph
                     elif format_type == 'm-ft':
-                        sensor_attr['unit_of_measurement'] = self.um_m_ft
+                        sensor_attrs['unit_of_measurement'] = self.um_m_ft
 
                 if attr_name in SENSOR_ATTR_ICON:
-                    sensor_attr['icon'] = SENSOR_ATTR_ICON.get(attr_name)
+                    sensor_attrs['icon'] = SENSOR_ATTR_ICON.get(attr_name)
 
                 #log_msg=("Sensor={}, Value='{}'").format(sensor_entity, value)
                 #self._LOGGER_debug_msg(log_msg)
 
-                self.hass.states.set(sensor_entity, value, sensor_attr)
+                self._update_device_sensors_hass(base_entity, attr_name, 
+                                    value, sensor_attrs)
+                                    
+                if attr_name == 'zone':
+                    value = 'not_home'
+                    zone_names = self._get_zone_names(value)
+                    badge_value = zone_names[1]
 
-                if attr_name in ['zone', 'last_zone']:
+                    self._update_device_sensors_hass(base_entity, "zone_name1", 
+                                    zone_names[1], sensor_attrs)
+                    self._update_device_sensors_hass(base_entity, "zone_name2", 
+                                    zone_names[2], sensor_attrs)
+                    self._update_device_sensors_hass(base_entity, "zone_name3", 
+                                    zone_names[3], sensor_attrs)
+                                    
+                elif attr_name == 'last_zone':
+                    value='gary_iphone_stationary'
                     zone_names = self._get_zone_names(value)
 
-                    if attr_name == 'zone':
-                        badge_value = zone_names[1]
-
-                    sensor_entity_f = "{}_name1".format(sensor_entity)
-                    self.hass.states.set(sensor_entity_f, zone_names[1], sensor_attr)
-
-                    sensor_entity_f = "{}_name2".format(sensor_entity)
-                    self.hass.states.set(sensor_entity_f, zone_names[2], sensor_attr)
-
-                    sensor_entity_f = "{}_name3".format(sensor_entity)
-                    self.hass.states.set(sensor_entity_f, zone_names[3], sensor_attr)
-
+                    self._update_device_sensors_hass(base_entity, "last_zone_name1", 
+                                    zone_names[1], sensor_attrs)
+                    self._update_device_sensors_hass(base_entity, "last_zone_name2", 
+                                    zone_names[2], sensor_attrs)
+                    self._update_device_sensors_hass(base_entity, "last_zone_name3", 
+                                    zone_names[3], sensor_attrs)
+                                    
                 elif attr_name == 'distance':
                     if value and float(value) > 0:
                         badge_value = "{} {}".format(
@@ -4105,17 +4103,16 @@ class Icloud(DeviceScanner):
                               str(int(attrs.get(ATTR_SPEED_AVERAGE))) + ", " + \
                               str(int(attrs.get(ATTR_SPEED_HIGH)))
 
-                    sensor_entity_f = "{}_summary".format(sensor_entity)
-                    sensor_attr = {}
-                    sensor_attr['icon'] = SENSOR_ATTR_ICON.get('speed')
-                    self.hass.states.set(sensor_entity_f, value_f, sensor_attr)
+                    sensor_attrs = {}
+                    sensor_attrs['icon'] = SENSOR_ATTR_ICON.get('speed')
 
+                    self._update_device_sensors_hass(base_entity, "speed_summary", 
+                                    value_f, sensor_attrs)
 
             if badge_value:
-                badge_entity = "{}_badge".format(base_entity)
-
-                self.hass.states.set(badge_entity, badge_value,
-                                self.sensor_badge_attrs.get(devicename))
+                self._update_device_sensors_hass(base_entity, "badge", 
+                                    badge_value, 
+                                    self.sensor_badge_attrs.get(devicename))
 
                 #log_msg=("Badge ={}, Value='{}' {}").format(
                 #        badge_entity, badge_value,
@@ -4129,6 +4126,16 @@ class Icloud(DeviceScanner):
             self._LOGGER_error_msg(log_msg)
 
             return False
+#--------------------------------------------------------------------
+    def _update_device_sensors_hass(self, base_entity, attr_name, 
+                                    value, sensor_attrs):
+        
+        if attr_name in self.sensors_custom_list:
+            sensor_entity = "{}_{}".format(base_entity, attr_name)
+            self.hass.states.set(sensor_entity, value, sensor_attrs)
+            
+            log_msg=("Sensor={}, Value='{}'").format(sensor_entity, value)
+            self._LOGGER_debug_msg(log_msg)
 
 #--------------------------------------------------------------------
     def _setup_info_attr(self, devicename, battery, \
@@ -4300,6 +4307,7 @@ class Icloud(DeviceScanner):
         self.friendly_name    = {}       #name made from status[CONF_NAME]
         self.friendly_picture = {}       #devicename picture from badge setup
         self.icloud_api_devices       = {} #icloud.api.devices obj 
+        self.tracked_devices_config_parm = {} #config file item for devicename
 
 #--------------------------------------------------------------------
     def _setup_zone_tables(self):
@@ -4392,7 +4400,7 @@ class Icloud(DeviceScanner):
     def _setup_sensor_variables(self):
         #Prepare sensors and base attributes
         self.sensor_devicenames       = []
-        self.sensors_list             = []
+        self.sensors_custom_list      = []
         self.sensor_badge_attrs       = {}
         self.sensor_base_entity       = {}
         self.sensor_prefix_name       = {}
@@ -4450,7 +4458,7 @@ class Icloud(DeviceScanner):
         self.sensor_entity_iosapp[devicename] = ('sensor.{}').format(
                 self.devicename_iosapp.get(devicename))
 
-        self._xxx_check_iosapp_version(devicename)
+        #self._xxx_check_iosapp_version(devicename)
 
         self.state_this_poll[devicename]       = \
                 self._get_current_state(devicename, IOSAPP_DT_ENTITY)
@@ -4602,37 +4610,68 @@ class Icloud(DeviceScanner):
             
             #cydle thru al contacts in fmf recd
             devicename_contact_emails = {}
+            
+            contacts_valid_emails = ''
+            log_msg=("Matching devicenames with FmF contact emails")
+            self._LOGGER_info_msg(log_msg)
+
             for contact in fmf.contacts:
-                contact_emails     = contact.get('emails')
-                contact_emails_str = str(contact_emails)
+
+                contact_emails = contact.get('emails')
+
                 id_contact = contact.get('id')
                
                 #cycle thru the emails on the tracked_devices config parameter
                 for parm_email in self.fmf_devicename_email: 
+                    if parm_email.find('@') == -1:
+                        continue
+
                     #cycle thru the contacts emails
+                    matched_friend = False
+                    devicename = self.fmf_devicename_email.get(parm_email)
+                    
                     for contact_email in contact_emails:
-                        if contact_email.startswith(parm_email):
-                            devicename = self.fmf_devicename_email.get(parm_email)
+                        if contacts_valid_emails.find(contact_email) == -1:
+                            contacts_valid_emails += contact_email + ","
                             
+                        if contact_email.startswith(parm_email):  
                             #update temp list with full email from contact recd
+                            matched_friend = True
                             devicename_contact_emails[contact_email] = devicename
                             devicename_contact_emails[devicename]    = contact_email
-                            #devicename_contact_emails[parm_email]    = devicename
-                            
+                            #devicename_contact_emails[parm_email]   = devicename
+                             
                             self.fmf_id[id_contact] = devicename
                             self.fmf_id[devicename] = id_contact
                             self.devicename_verified[devicename] = True
                             self.friendly_name[devicename] = contact.get('firstName')
                             
-                            log_msg = ("Load FmF Contact Data, email={}, "
-                                    "devicename={}, id={}").format(contact_email, 
-                                    devicename, id_contact)
-                            self._LOGGER_debug_msg(log_msg)
+                            log_msg = ("Matched {} with FmF contact {}/{}").\
+                                        format(devicename, 
+                                        contact.get('firstName'), contact_email)
+                            self._LOGGER_info_msg(log_msg)
                             break
-
-            self.fmf_devicename_email = {}
+                            
+            for devicename in self.devicename_verified:
+                if self.devicename_verified.get(devicename) == False:
+                    parm_email = self.fmf_devicename_email.get(devicename)
+                    devicename_contact_emails[devicename] = parm_email
+                    log_msg = ("Could not match email for {} with FmF contact.").\
+                                format(devicename)
+                    self._LOGGER_warning_msg(log_msg)
+                    log_msg = ("Entered {}, valid emails are <{}>").format(
+                            parm_email, contacts_valid_emails[:-1])
+                    self._LOGGER_warning_msg(log_msg)
+                    log_msg = ("Verify that a contact for {} has been added ").\
+                                format(devicename)
+                    self._LOGGER_warning_msg(log_msg)           
+                    log_msg = ("to the {} FmF iCloud Account").\
+                            format(self.username)
+                    self._LOGGER_warning_msg(log_msg)
+     
+            self.fmf_devicename_email = {}        
             self.fmf_devicename_email.update(devicename_contact_emails)
-               
+   
         except Exception as err:
             _LOGGER.exception(err)
               
@@ -4645,15 +4684,12 @@ class Icloud(DeviceScanner):
         Extract the friendly_name & device_type from the icloud data
         '''
         try:
-            _LOGGER.debug("_setup_tracked_devices_icloud Entered")
             for device in self.api.devices:
                 status      = device.status(DEVICE_STATUS_SET)
                 location    = status['location']
                 devicename  = slugify(
                         status[CONF_NAME].replace(' ', '', 99))
                 device_type = status['deviceClass'].lower()
-                _LOGGER.debug("devicename=%s",devicename)
-                _LOGGER.debug("location=%s",location)
                 
                 if devicename in self.devicename_verified:
                     self.devicename_verified[devicename] = True
@@ -4747,27 +4783,33 @@ class Icloud(DeviceScanner):
             name     = None
             reserved = None
             device_type = None
-            _LOGGER.debug("config_parameter=%s",config_parameter)
+
             devicename_parameters = config_parameter.lower().split('>') 
             devicename = devicename_parameters[0].strip()
-
+            self.tracked_devices_config_parm[devicename] = config_parameter
+            
             if len(devicename_parameters) > 1:
                 parameters = devicename_parameters[1].strip()
                 parameters = parameters + ',,,,,,'
                 
-                #if no email address and not starting with a ',', add one
-                if parameters.find('@') == -1 and parameters[0] != ',':
-                    parameters = ',' + parameters
+                #if no email address (no '@') and no ',' (only 1 item),
+                #see if it a picture. If so, add an '@' to split correctly.
+                if (parameters.find('@') == -1 and parameters.find(',') == -1): 
+                    if (parameters.find('.png') > 0 or parameters.find('.jpg') > 0):
+                        parameters = ',' + parameters
+                    
                 item = parameters.split(',')
 
                 email = item[0].strip()
                 if email != '' and email.find("@") == -1:
                     email += '@'
-                    
+   
                 picture = item[1].strip()
                 if (picture != '' and picture.find(".png") == -1 and 
                         picture.find(".jpg") == -1):
-                    _LOGGER.warning_msg(("Invalid picture name <{}>").format(picture))
+                    _LOGGER.warning(("Invalid picture name for {}, found "
+                            "<{}>, should have '.png' or '.jpg'. Picture name "
+                            "discarded.").format(devicename, picture))
                     picture = ''
                 if picture.find('/') == -1:
                     picture = '/local/' + picture
@@ -4863,170 +4905,7 @@ class Icloud(DeviceScanner):
                 
         except Exception as err:
             _LOGGER.exception(err)
-        
-#--------------------------------------------------------------------
-    #DEPRECIATED
-    def _xxx_setup_tracked_devices_icloud(self):
-        '''
-        Scan the iCloud devices data. Select devices based on the
-        include & exclude devices and device_type config parameters.
-        
-        Extract the friendly_name & device_type from the icloud data
-        '''
-        try:
-            for device in self.api.devices:
-                status      = device.status(DEVICE_STATUS_SET)
-                location    = status['location']
-                devicename  = slugify(status[CONF_NAME].replace(' ', '', 99))
-                device_type = status['deviceClass'].lower()
-
-                if location is None:
-                    tracking_flag = False
-                    log_msg = (
-                        "Not tracking {}/{}({}), No location information").\
-                        format(self.accountname, devicename, device_type)
-                    self._LOGGER_info_msg(log_msg)
-
-                elif status['locationEnabled'] is False:
-                    tracking_flag = False
-                    log_msg = (
-                        "Not tracking {}/{}({}), Location Disabled").\
-                        format(self.accountname, devicename, device_type)
-                    self._LOGGER_info_msg(log_msg)
-
-                elif status['deviceStatus'] == '204':
-                    tracking_flag = False
-                    log_msg = (
-                        "Not tracking {}/{}({}), Unregistered Device").\
-                        format(self.accountname, devicename, device_type)
-                    self._LOGGER_info_msg(log_msg)
-
-                elif devicename in self.tracking_device_flag:
-                    tracking_flag = False
-                    log_msg = (
-                        "Not tracking {}/{}({}), Multiple devices with same"
-                        "name").format(
-                        self.accountname, devicename, device_type)
-                    self._LOGGER_info_msg(log_msg)
-
-                else:
-                    tracking_flag = self._xxx_check_tracking_this_device(
-                                    devicename, device_type)
-
-                self.tracking_device_flag[devicename] = tracking_flag
-
-                if tracking_flag:
-                    self.track_devicename_list = '{}, {}'.format(
-                            self.track_devicename_list, devicename)
-                    self.devicename_verified[devicename] = True
-                    self.tracked_devices[devicename]  = device
-                    self.device_type[devicename]      = device_type
-
-                    #Try take first name of user from 'name': 'Lillian-iPhone'
-                    user_name = status[CONF_NAME].split(" ")
-                    user_name = user_name[0].split("'")
-                    user_name = user_name[0].split('-')
-                    self.friendly_name[devicename] = user_name[0]
-
-                    #self._setup_sensor_name_devicename(devicename)
-
-                    event_msg = ("Tracking {}/{}").format(
-                            self.accountname, devicename)
-                    self._save_event("*", event_msg)
-        except:
-            log_msg = ("iCloud3 Setup Aborted, Error authenticating "
-                        "devices for {}").format(self.accountname)
-            self._LOGGER_error_msg(log_msg)
-
-#--------------------------------------------------------------------
-    #DEPRECIATED
-    def _xxx_check_tracking_this_device(self, devicename, device_type):
-        ''' Validate device tracking via include/exclude filters '''
-
-        # An entity will not be created by see() when track=false in
-        # 'known_devices.yaml', but we need to see() it at least once
-
-        entity_id = self.device_tracker_entity.get(devicename)
-
-        #devicename in 'excluded_devices' parameter ==> Don't Track
-        if devicename in self.exclude_devices:
-            log_msg = ("Not tracking {}/{}({}), Failed "
-                        "'exclude_devices' filter ({})").format(
-                        self.accountname, devicename, device_type,
-                        self.exclude_devices)
-            self._LOGGER_info_msg(log_msg)
-
-            return False
-
-        #devicename in 'include_devices' parameter ==> Track
-        elif devicename in self.include_devices:
-            log_msg = ("Tracking {}/{}({}), Passed "
-                        "'include_devices' filter ({})").format(
-                        self.accountname, devicename, device_type,
-                        self.include_devices)
-            self._LOGGER_info_msg(log_msg)
-
-            return True
-
-        #devicetype in 'include_device_types' parameter ==> Track
-        elif device_type in self.include_device_types:
-            log_msg = ("Tracking {}/{}({}), Passed "
-                        "'include_device_type' filter").format(
-                        self.accountname, devicename, device_type)
-            self._LOGGER_info_msg(log_msg)
-
-            return True
-
-        #devicetype in 'exclude_device_types' parameter ==> Don't Track
-        elif device_type in self.exclude_device_types:
-            log_msg = ("Not tracking {}/{}({}), Failed "
-                         "'exclude_device_types' filter ({})").format(
-                         self.accountname, devicename, device_type,
-                         self.exclude_device_types)
-            self._LOGGER_info_msg(log_msg)
-
-            return False
-
-        #neither 'include_device_types' nor 'exclude_device_types' parameter
-        #and devicename not in 'include_devices' parameter    ==> Don't Track
-        elif (not self.include_device_types and
-                not self.exclude_device_types and
-                self.include_devices):
-            log_msg = ("Not tracking {}/{}({}), Failed "
-                        "'include devices' filter ({})").format(
-                        self.accountname, devicename,  device_type,
-                        self.include_devices)
-            self._LOGGER_info_msg(log_msg)
-
-            return False
-
-        #'include_device_types parameter and
-        #devicename in 'exclude_device' ==> Don't Track
-        elif (self.include_device_types and
-                devicename in self.exclude_devices):
-            log_msg = ("Not tracking {}/{}({}), Failed "
-                        "'include_device_types' filter ({})").format(
-                        self.accountname, devicename, device_type,
-                        self.include_device_types)
-            self._LOGGER_info_msg(log_msg)
-
-            return False
-
-        #unknown device ==> Don't Track
-        elif entity_id is None:
-            log_msg = ("Not tracking {}/{}({}), Unknown device").format(
-                        self.accountname, devicename, device_type)
-            self._LOGGER_info_msg(log_msg)
-
-            return False
-
-        log_msg = ("Not tracking {}/{}({}), Did not match any tracking "
-                    "filters").format(
-                    self.accountname, devicename, device_type)
-        self._LOGGER_info_msg(log_msg)
-
-        return False
-    
+           
     
 #########################################################
 #
@@ -5064,71 +4943,32 @@ class Icloud(DeviceScanner):
         return
 
 #--------------------------------------------------------------------
-    def _setup_sensors_displayed(self):
+    def _setup_sensors_custom_list(self):
         '''
         This will process the 'sensors' and 'exclude_sensors' config 
         parameters if 'sensors' exists, only those sensors wil be displayed.
         if 'exclude_sensors' eists, those sensors will not be displayed.
         'sensors' takes ppresidence over 'exclude_sensors'.
         '''
-        
+
         if self.sensors != None:
+            self.sensors_custom_list = []
             config_sensor_ids = self.sensors.split(",")
             for config_sensor_id in config_sensor_ids:
                 sensor_id = config_sensor_id.strip()
                 if sensor_id in SENSOR_ID_NAME_LIST:
-                    self.sensors_list.append(SENSOR_ID_NAME_LIST.get(sensor_id))
-                    _LOGGER.debug("Add sensor list=%s",SENSOR_ID_NAME_LIST.get(sensor_id))
+                    self.sensors_custom_list.append(SENSOR_ID_NAME_LIST.get(sensor_id))
                     
         elif self.exclude_sensors != None:
-            self.sensors_list = self.extend(SENSOR_DEVICE_ATTRS)
+            self.sensors_custom_list.extend(SENSOR_DEVICE_ATTRS)
             config_sensor_ids = self.exclude_sensors.split(",")
             for config_sensor_id in config_sensor_ids:
                 sensor_id = config_sensor_id.strip()
                 if sensor_id in SENSOR_ID_NAME_LIST:
-                    self.sensors_list.remove(SENSOR_ID_NAME_LIST.get(sensor_id))
-                    _LOGGER.debug("Del sensor list=%s",SENSOR_ID_NAME_LIST.get(sensor_id))
+                    if SENSOR_ID_NAME_LIST.get(sensor_id) in self.sensors_custom_list:
+                        self.sensors_custom_list.remove(SENSOR_ID_NAME_LIST.get(sensor_id))
         else:
-            self.sensors_list = self.append(SENSOR_DEVICE_ATTRS)
-
-        _LOGGER.debug("New sensor list=%s",self.sensors_list)
-#--------------------------------------------------------------------
-    def _xxx_setup_devicename_iosapp(self):
-        '''
-        The iosapp_device_ids will associate the device_id used by the
-        ios app to a devicename. If not specified, the regular devicename will
-        be used
-
-            iosapp_device_id:
-              - gary_iphone @ gary_iosname
-              - lillian_iphone @ lillian_iosname
-
-              ['name', 'gary_iphone = gary_iosname',
-                            'lillian_iphone = lillian_iosname']
-        '''
-        #Set devault values
-        for devicename in self.tracked_devices:
-            self.devicename_iosapp[devicename] = devicename
-
-        for kv in self.iosapp_device_ids:
-            kvw = kv.replace(" ", "", 99)
-            kvw = kvw.replace("@", "=", 99)
-            
-            if '=' in kvw:
-                devicename_iosapp_device = \
-                            kvw.replace(' ','',99).lower().split('=')
-                devicename    = devicename_iosapp_device[0]
-                iosapp_device = devicename_iosapp_device[1]
-                if iosapp_device == "''":
-                    iosapp_device = ''
-                iosapp_device = iosapp_device.replace("'","`",99)
-                iosapp_device = iosapp_device.replace('"','`',99)
-
-                self.devicename_iosapp[devicename] = iosapp_device
-                log_msg = ("Device {} linked to iosapp device as `{}`").format(devicename, iosapp_device)
-                self._LOGGER_info_msg(log_msg)
-                self._save_event("*", log_msg)
-
+            self.sensors_custom_list.extend(SENSOR_DEVICE_ATTRS)
 
 #--------------------------------------------------------------------
     def _xxx_check_iosapp_version(self, devicename):
