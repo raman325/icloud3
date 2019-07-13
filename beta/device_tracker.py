@@ -462,7 +462,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
 
     stationary_inzone_interval_str = config.get(CONF_STATIONARY_INZONE_INTERVAL)
     stationary_still_time_str = config.get(CONF_STATIONARY_STILL_TIME)
-    
+
     sensor_ids             = _combine_lists(config.get(CONF_SENSORS))
     exclude_sensor_ids     = _combine_lists(config.get(CONF_EXCLUDE_SENSORS))
 
@@ -614,7 +614,7 @@ class Icloud(DeviceScanner):
         self.password            = password
         self.api                 = None
         self.accountname         = account              #name
-        self.base_zone_config    = base_zone     #use as 'home' base location  
+        self.base_zone_config    = base_zone     #use as 'home' base location
         self.see                 = see
         self.iosapp_device_ids   = iosapp_device_ids
         self.verification_code   = None
@@ -626,7 +626,7 @@ class Icloud(DeviceScanner):
         mode = tracking_method
 
         self._setup_tracking_method(tracking_method)
-    
+
         self.max_iosapp_locate_cnt = max_iosapp_locate_cnt
         self.restart_icloud_account_request_flag   = False
         self.restart_icloud_account_inprocess_flag = False
@@ -741,7 +741,7 @@ class Icloud(DeviceScanner):
 
             except PyiCloudFailedLoginException as error:
                 self.api = None
-                
+
                 log_msg = ("Error authenticating iCloud FmF/FmPhn Service "
                            "for {}/{}").format(self.username, self.accountname)
                 self._LOGGER_error_msg(log_msg)
@@ -754,9 +754,9 @@ class Icloud(DeviceScanner):
                 log_msg = ("Falling back to using IOSAPP instead of {}").\
                             format(self.mode_short_name)
                 self._LOGGER_error_msg(log_msg)
-                
+
                 self.mode = MODE_IOSAPP
-                
+
         self._setup_tracking_method(self.mode)  #setup again in case of errors
         self._setup_device_tracking_fields()
         self._setup_sensor_variables()
@@ -2542,7 +2542,7 @@ class Icloud(DeviceScanner):
                 self.poor_gps_accuracy_cnt[devicename] = 0
                 interval   = 60      #poor accuracy, try again in 1 minute
                 log_method = '2c-PoorGPSCnt'
-            
+
             #inzone & poor gps & do not ignore gps when inzone
             elif (self.poor_gps_accuracy_flag.get(devicename) and
                     (inzone_flag and not
@@ -4150,10 +4150,10 @@ class Icloud(DeviceScanner):
             info = ''
             if self.base_zone != 'home':
                 info = '{} ●Base.Zone: {}'.format(info, self.base_zone_name)
-                
+
             if not self.CURRENT_MODE_FMF:
                 info = '{} ●Track.Method: {}'.format(info, self.mode_short_name)
-                        
+
             if self.overrideinterval_seconds.get(devicename) > 0:
                 info = '{} ●Overriding.Interval'.format(info)
 
@@ -4288,7 +4288,7 @@ class Icloud(DeviceScanner):
 
 #--------------------------------------------------------------------
     def _setup_tracking_method(self, mode):
-    
+
         self.CURRENT_MODE_FMF    = (mode == MODE_FMF)
         self.CURRENT_MODE_FMPHN  = (mode == MODE_FMPHN or mode == MODE_ICLOUD)
         self.CURRENT_MODE_FMF_FMPHN = (mode in MODE_FMF_FMPHN)
@@ -4338,6 +4338,7 @@ class Icloud(DeviceScanner):
         self.zone_longitude            = {}
         self.zone_radius               = {}
         self.zone_passive              = {}
+        self.base_zone_sensor_suffix   = ""
 
         '''
         Get friendly name of all zones to set the device_tracker state
@@ -4363,8 +4364,11 @@ class Icloud(DeviceScanner):
 
         #base.zone can be 'zonename' or 'zonename,secondary'. Get the zonename
         base_zone_items = self.base_zone_config.split(',')
-        self.base_zone_secondary_flag = (len(base_zone_items) == 2)
+        
         base_zone = base_zone_items[0].lower().strip()
+        base_zone_suffix = "_" + base_zone_items[1] \
+                        if len(base_zone_items) == 2  else ""
+            
         if base_zone not in self.zone_friendly_name:
             base_zone = 'home'
             log_msg = ("Invalid Base Zone Name '{}', resetting to 'home'").\
@@ -4373,8 +4377,9 @@ class Icloud(DeviceScanner):
         log_msg = ("Zone Name Table Initialized {}, Base Zone '{}'").format(
                         self.zone_friendly_name, base_zone)
         self._LOGGER_info_msg(log_msg)
-        
+
         self.base_zone        = base_zone
+        self.base_zone_sensor_suffix = base_zone_suffix
         self.base_zone_name   = self.zone_friendly_name.get(base_zone)
         self.zone_home_lat    = self.zone_latitude.get(base_zone)
         self.zone_home_long   = self.zone_longitude.get(base_zone)
@@ -4850,7 +4855,7 @@ class Icloud(DeviceScanner):
 
                 reserved    = item[2].strip()
                 prefix_name = item[3].strip()
-                
+
                 if reserved != "" and prefix_name == "":
                     log_msg = ("Config 'tracking_devices' parameter error "
                             "corrected. 'Reserved' field (#3) being used for "
@@ -4858,8 +4863,8 @@ class Icloud(DeviceScanner):
                     self._LOGGER_warning_msg(log_msg)
                     log_msg = ("Found  : {}").format(config_parameter)
                     self._LOGGER_warning_msg(log_msg)
-                    temp = config_parameter.replace(reserved, ','+reserved) 
-                    temp = temp.replace(', ,', ',, ')                      
+                    temp = config_parameter.replace(reserved, ','+reserved)
+                    temp = temp.replace(', ,', ',, ')
                     log_msg = ("Correct: {}").format(temp)
                     self._LOGGER_warning_msg(log_msg)
                     prefix_name = reserved
@@ -4965,10 +4970,6 @@ class Icloud(DeviceScanner):
         The sensor name prefix can be the devicename or a name specified on
         the track_device configuration parameter        '''
 
-        #base_zone may be 'zonename' or 'zonename,secondary'
-        base_zone = "_"+self.base_zone \
-                    if self.base_zone_secondary_flag else ""
-
         for devicename in self.tracked_devices:
             if self.sensor_prefix_name.get(devicename) is None:
                 prefix_name = devicename
@@ -4978,8 +4979,9 @@ class Icloud(DeviceScanner):
                 prefix_name = devicename
 
             self.sensor_base_entity[devicename] = \
-                         'sensor.{}'.format(prefix_name) + base_zone
-                         
+                         'sensor.{}'.format(prefix_name) + \
+                                    self.base_zone_sensor_suffix
+
 
             badge_attrs = {}
             badge_attrs['entity_picture'] = \
