@@ -215,6 +215,7 @@ class PyiCloudService(object):
 
         self.data = {}
         self.client_id = client_id or str(uuid.uuid1()).upper()
+        self.apple_id = apple_id
         self.user = {'apple_id': apple_id, 'password': password}
         self.appleWidgetKey = None
         self.webservices = None
@@ -298,18 +299,20 @@ class PyiCloudService(object):
 
         self.session_token = self.get_session_token()
         if self.session_token is None:
-            logger.info("Error requesting Apple Widget Key (%s)", error_msg)
+            logger.info(("Error logging into iCloud account {}"). \
+                    format(self.apple_id))
             logger.info("Clearing cookies and retrying")
             self.session.cookies.clear()
             self.session.cookies.save()
             self.session.cookies.load()
             self.session_token = self.get_session_token()
             if self.session_token is None:        
-                logger.error("Error requesting Apple Widget Key (%s)",
-                                error_msg)
+                logger.error(("Error logging into iCloud account {}"). \
+                    format(self.apple_id))
                 logger.error("iCloud API Authentication Failure, Aborted")
-                return
-                #raise PyiCloudFailedLoginException(msg, 0)
+                #return
+                msg = 'Invalid username/password'
+                raise PyiCloudFailedLoginException(msg, 0)
 
         logger.debug("_<warn>____ PyiCloudService ______ authenticate/login _____")
 
@@ -771,8 +774,12 @@ class IdmsaAppleService(HTTPService):
                 self.twoSV_trust_eligible = headers["X-Apple-TwoSV-Trust-Eligible"]
             else:
                 self.twoSV_trust_eligible = False
+        
+        except KeyError:
+            return None, None
             
         except Exception as e:
+            logger.debug("AppleSessionToken error")
             err_str = "requestAppleSessionToken: " + \
                       "Apple Session Token query failed"
 

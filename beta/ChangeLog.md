@@ -1,5 +1,65 @@
 ## iCloud3 Change Log
 
+#### Version 1.1 0 Beta 3 - July 13
+
+**Changes:**
+
+- If the Find-my-Friends account id/password was incorrect when logging into the iCloud account, iCloud3 and the Pyicloud_ic3 iCloud Service Handler would generate all kinds of error messages and and nothing would work. This has been corrected to display error messages and fall back to using the IOS App tracking method..
+
+- Changed the *tracking_method* value for the iCloud Find-my-Phone Location Service from 'icloud' to 'fmphn' for consistency with 'fmf'.
+
+- Changed the way a date is displayed to see if iCloud3 would run on a Windows based linux platform.
+
+- Added a *base_zone* configuration parameter. See below for more information on the *base_zone*. 
+
+  
+
+**Still to do:**
+
+- Update the iCloud3 documentation manual.
+
+  
+
+**Configuration Parameter Updates**
+
+**base_zone**  
+Normally, the 'home' zone is the zone used to calculate distances, travel times, update intervals, etc. The *base_zone* lets you do this for a zone other than the 'home' zone. You can, for example, set up a second iCloud3 platform using the same FmF login username/password as you normally do but have the *base_zone* set as a work zone, a second home zone or another zone you want to use as the basis for device tracking calculations. Another Lovelace card can then be set up to display all of the distances, travel times, etc for that zone.  
+
+*Valid values: zone names*
+
+*Default value: home*
+
+ *Format:*  `base_zone: otherzonename, sensorzoneprefix`
+
+*Example:* `base_zone: office, offc`
+
+  
+
+| Field            | Description/Notes                                            |
+| ---------------- | ------------------------------------------------------------ |
+| otherzonename    | *Required* The other zone to be used as the basis for calculating distances, travel times, intervals, etc. |
+| sensorzoneprefix | *Optional*  Sensors for the 'home' zone are normally named as `sensor.devicename_fieldname `. The *sensorzoneprefix* specifies the text to be added to the sensor to make it different then the 'home' zone sensor. The name will become `sensor.devicename_sensorzoneprefix_fieldname`. For example, the sensor for the travel time to 'home' is `sensor.gary_iphone_travel_time` and the travel time to the 'office' zone might be `sensor.gary_iphone_offc_travel_time`  if 'offc' is the text you specified for the *senorzoneprefix*. <br><br>*Note:* If you do not use the *sensorzoneprefix*, the sensor is named as it normally is. e.g., `sensor.gary_iphone_travel_time`. It all depends on how you set up the iCloud3 platform and your Lovelace cards that monitor the iCloud3 sensors.<br><br>*Note:* The field names remain the same across all sensors. Of special importance is that the 'home_distance' sensor is the distance to zone, whether the zone is 'home' zone or another zone. |
+
+
+------
+
+
+#### Version 1.1 0 Beta 2 - July 11
+
+**Changes:**
+
+- Added step 2 in the set up instructions above to add contacts in the FMF account for the devices to be tracked.
+- Added additional messages to the HA log file to better describe the process of matching the devicename-email address to the FmF contact-email address. The messages better describe what is going on and clarify what needs to be done if a devicename can not be matched to a contact (and thus to a device's location)
+- Added the ability to exclude sensors you don't use or don't want to see from being created. Also added the ability to specify what sensors you want to see. More about this in the documentation later.
+
+**Still to do:**
+
+- Update the iCloud3 documentation manual.
+
+  
+
+------
+
 #### Version 1.1.0 Beta 1 - July 10
 
 **Breaking Changes**
@@ -55,19 +115,18 @@ To Use FmF, you will need to set up a new Apple iCloud account with a new email 
 
 
 **tracking_method**  
-  iCloud3 supports three methods of tracking a device -- iCloud Location Services, Find-My-Friends and the HA IOS App version 1 and version 2 (version 2 not available yet).
+Select the method to be used to track your phone or other device. iCloud3 supports three methods of tracking a device -- iCloud Find-My-Phone Location Services, iCloud Find-My-Friends Location Services and the HA IOS App version 1 and version 2 (version 2 not available yet). 
 
-*Valid values: fmf, icloud, iosapp1, iosapp2*
+*Valid values: fmf, fmphn, iosapp1, iosapp2*
 
-  *Default value: fmf*
+*Default value: fmf*
 
   
 
-  **track_devices**  (or  **track_device**) *Required* 
-  Identifies the devices to be tracked, their associated email addresses, badge pictures and a name that should be uses for the device's sensors.  This replaces the *include_devices & include_device_types* parameter.
+**track_devices**  (or  **track_device**) *Required* 
+Identifies the devices to be tracked, their associated email addresses, badge pictures and a name that should be uses for the device's sensors.  This replaces the *include_devices & include_device_types* parameter.
 
-  *Format:*
-    ```devicename > email_address, badge_picture_name, reserved, sensor_prefix_name```
+ *Format:*   `devicename > email_address, badge_picture_name, reserved, sensor_prefix_name`
 
   
 
@@ -108,19 +167,3 @@ To Use FmF, you will need to set up a new Apple iCloud account with a new email 
       - gary_iphone > garyrealemail@gmail.com, gary.png
    	- lillian_iphone > lillianrealemail@gmail.com, lillian.png
   ```
-
-
-
-#### Version 1.1 0 Beta 2 - July 11
-
-**Changes:**
-
-- Added step 2 in the set up instructions above to add contacts in the FMF account for the devices to be tracked.
-
-- Added additional messages to the HA log file to better describe the process of matching the devicename-email address to the FmF contact-email address. The messages better describe what is going on and clarify what needs to be done if a devicename can not be matched to a contact (and thus to a device's location)
-
-- Added the ability to exclude sensors you don't use or don't want to see from being created. Also added the ability to specify what sensors you want to see. More about this in the documentation later.
-
-**Still to do:**
-
-- Update the iCloud3 documentation manual.
