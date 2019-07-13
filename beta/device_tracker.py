@@ -4366,7 +4366,7 @@ class Icloud(DeviceScanner):
         base_zone_items = self.base_zone_config.split(',')
         
         base_zone = base_zone_items[0].lower().strip()
-        base_zone_suffix = "_" + base_zone_items[1] \
+        base_zone_suffix = "_" + base_zone_items[1].lower().strip() \
                         if len(base_zone_items) == 2  else ""
             
         if base_zone not in self.zone_friendly_name:
