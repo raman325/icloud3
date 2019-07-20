@@ -1,5 +1,56 @@
 ## iCloud3 Change Log
 
+
+
+#### Version 1.1 0 Beta 4 - July 20
+
+- Changed the *account_name* configuration parameter to *group* to better clarify that this *account_name* parameter has nothing to do with the iCloud account but really refers to how the devices being tracked are grouped together in a platform. (The *account_name* is automatically converted to *group*).
+
+- Updated the *base_zone* configuration parameter to better handle the sensor_name_prefix part of the parameter. The base_zone is added before the devicename rather than after it to better group the sensors created for the base_zone. See the "Zone, Interval and Sensor Configuration Items" section of the documentation for more information. This may be a breaking change.
+
+- If the same devicename was used in two platforms with different *group* names and one had a different *base_zone* other than 'home' (e.g., `gary_iphone`  tracking the 'home' zone and also `gary_iphone` tracking the 'whse' zone), the device would be polled every 5-seconds rather than based on the next_update time as it should. There was also some confusion (internally) as to what device was getting updated by what *base_zone* and when it should be updated. This has been corrected. I hope.
+
+- Fixed a problem generating an *INTERNAL ERROR-RETRYING (_update_device_icloud/OverallUpdate-_save_event() missing 1 required positional argument: ‘log_text’)* error message.
+
+- Changed error messages related to Find-my-Friends authentication errors, a tracked_device not being found in the FmF contact list, location data not being returned from FmF and invalid base_zone names. The errors will better explain the problem found and offer advice on how to correct it. 
+
+- Added *create_sensors* and *exclude_sensors* configuration parameters. With these parameters, you can select only the sensors to be created or to exclude sensors from those created from iCloud3. See the documentation section "Customizing the sensors that are created" for more information. This is helpful if there are sensors you do not use and do not want cluttering up the HA development tools sensor list.
+
+- Changed some formatting parameters for dates to be able to run in a Windows environment without generating error messages.
+
+- Code cleanup and optimization.
+
+  
+
+**Configuration Parameter Updates**
+
+**base_zone**  
+Normally, the 'home' zone is the zone used to calculate distances, travel times, update intervals, etc. The *base_zone* lets you do this for a zone other than the 'home' zone. You can, for example, set up a second iCloud3 platform using the same FmF account login username/password as you normally do but have the *base_zone* set as a work zone, a second home zone or another zone that you want to use as the basis for device tracking calculations. Another Lovelace card can then be set up to display all of the information for that zone.  
+
+*Format:*  `base_zone: basezonename, sensorprefixname` 
+
+basezonename: *Valid values: valid zone name,  Default value: home*
+
+sensorprefixname:  (Optional) Sensors are normally named using the devicename (or a value you specify on the *track_devices* parameter), followed by the attribute name (`sensor.gary_iphone_travel_time`). When the *base_zone* parameter is used, it is added to the sensor name before the devicename (`sensor.office_gary_iphone_travel_time`). 
+
+- Not specified - Use the basezonename as the sensorprefixname
+
+   (`base_zone: offc --> sensor.offc_gary_travel_time`)
+
+- "noprefix" - Do not use a sensorprefiname
+
+   (`base_zone: offc, noprefix --> sensor.gary_iphone_travel_time`)
+
+- "CustomName" - Use the "CustomName" as the sensorprefixname
+
+   (`base_zone: offc, piedpiper --> sensor.piedpiper_gary_iphone_travel_time`)
+
+*Note:* The sensor for the distance to 'home' is `sensor.devicename_home_distance`. When the *base_zone*  is used, the *home_distance* attribute is the distance to the *base_zone*. For example, `sensor.office_gary_iphone_home_distance` is the distance to the 'office' zone.
+
+Note: If you have a *sensor name prefix* also specified on the *tracked_devices* parameter, it replaces the devicename part of the sensor's entity name, e.g., `sensor.piedpiper_garyc_travel_time`.
+
+  
+
 #### Version 1.1 0 Beta 3 - July 13
 
 **Changes:**
@@ -10,35 +61,13 @@
 
 - Changed the way a date is displayed to see if iCloud3 would run on a Windows based linux platform.
 
-- Added a *base_zone* configuration parameter. See below for more information on the *base_zone*. 
-
   
+
 
 **Still to do:**
 
 - Update the iCloud3 documentation manual.
 
-  
-
-**Configuration Parameter Updates**
-
-**base_zone**  
-Normally, the 'home' zone is the zone used to calculate distances, travel times, update intervals, etc. The *base_zone* lets you do this for a zone other than the 'home' zone. You can, for example, set up a second iCloud3 platform using the same FmF login username/password as you normally do but have the *base_zone* set as a work zone, a second home zone or another zone you want to use as the basis for device tracking calculations. Another Lovelace card can then be set up to display all of the distances, travel times, etc for that zone.  
-
-*Valid values: zone names*
-
-*Default value: home*
-
- *Format:*  `base_zone: otherzonename, sensorzoneprefix`
-
-*Example:* `base_zone: office, offc`
-
-  
-
-| Field            | Description/Notes                                            |
-| ---------------- | ------------------------------------------------------------ |
-| otherzonename    | *Required* The other zone to be used as the basis for calculating distances, travel times, intervals, etc. |
-| sensorzoneprefix | *Optional*  Sensors for the 'home' zone are normally named as `sensor.devicename_fieldname `. The *sensorzoneprefix* specifies the text to be added to the sensor to make it different then the 'home' zone sensor. The name will become `sensor.devicename_sensorzoneprefix_fieldname`. For example, the sensor for the travel time to 'home' is `sensor.gary_iphone_travel_time` and the travel time to the 'office' zone might be `sensor.gary_iphone_offc_travel_time`  if 'offc' is the text you specified for the *senorzoneprefix*. <br><br>*Note:* If you do not use the *sensorzoneprefix*, the sensor is named as it normally is. e.g., `sensor.gary_iphone_travel_time`. It all depends on how you set up the iCloud3 platform and your Lovelace cards that monitor the iCloud3 sensors.<br><br>*Note:* The field names remain the same across all sensors. Of special importance is that the 'home_distance' sensor is the distance to zone, whether the zone is 'home' zone or another zone. |
 
 
 ------
