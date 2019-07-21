@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '1.1.0b4'      #Custom Component Updater
+VERSION = '1.1.0b5'      #Custom Component Updater
 
 import logging
 import os
@@ -125,7 +125,7 @@ ATTR_TIMESTAMP          = 'timestamp'
 ATTR_TRIGGER            = 'trigger'
 ATTR_BATTERY            = 'battery'
 ATTR_INTERVAL           = 'interval'
-ATTR_HOME_DISTANCE      = 'home_distance'
+ATTR_ZONE_DISTANCE      = 'zone_distance'
 ATTR_CALC_DISTANCE      = 'calc_distance'
 ATTR_WAZE_DISTANCE      = 'waze_distance'
 ATTR_WAZE_TIME          = 'travel_time'
@@ -135,7 +135,7 @@ ATTR_DEVICE_STATUS      = 'device_status'
 ATTR_LOW_POWER_MODE     = 'low_power_mode'
 ATTR_BATTERY_STATUS     = 'battery_status'
 ATTR_TRACKING           = 'tracking'
-ATTR_ALIAS               = 'alias'
+ATTR_ALIAS              = 'alias'
 ATTR_AUTHENTICATED      = 'authenticated'
 ATTR_LAST_UPDATE_TIME   = 'last_update'
 ATTR_NEXT_UPDATE_TIME   = 'next_update'
@@ -188,7 +188,7 @@ TRACE_ATTRS_BASE        = {ATTR_ZONE: '', ATTR_LAST_ZONE: '',
                            ATTR_LATITUDE: 0, ATTR_LONGITUDE: 0,
                            ATTR_TRIGGER: '',
                            ATTR_TIMESTAMP: ISO_TIMESTAMP,
-                           ATTR_HOME_DISTANCE: 0, ATTR_INTERVAL: 0,
+                           ATTR_ZONE_DISTANCE: 0, ATTR_INTERVAL: 0,
                            ATTR_DIR_OF_TRAVEL: '', ATTR_TRAVEL_DISTANCE: 0,
                            ATTR_LAST_UPDATE_TIME: '',
                            ATTR_NEXT_UPDATE_TIME: '',
@@ -204,7 +204,7 @@ TRACE_ICLOUD_ATTRS_BASE = {CONF_NAME: '', 'deviceStatus': '',
 SENSOR_DEVICE_ATTRS     = ['zone', 'zone_name1', 'zone_name2', 'zone_name3',
                            'last_zone', 'last_zone_name1', 'last_zone_name2',
                            'last_zone_name3', 'zone_timestamp', 'base_zone',
-                           'home_distance', 'calc_distance', 'waze_distance',
+                           'zone_distance', 'calc_distance', 'waze_distance',
                            'travel_time', 'dir_of_travel', 'interval', 'info',
                            'last_located', 'last_update', 'next_update',
                            'poll_count', 'travel_distance', 'trigger',
@@ -212,7 +212,7 @@ SENSOR_DEVICE_ATTRS     = ['zone', 'zone_name1', 'zone_name2', 'zone_name3',
                            'speed', 'speed_high', 'speed_average',
                            'speed_summary', 'altitude', 'badge', 'event_log']
 
-SENSOR_ATTR_FORMAT      = {'home_distance': 'dist',
+SENSOR_ATTR_FORMAT      = {'zone_distance': 'dist',
                            'calc_distance': 'dist',
                            'waze_distance': 'diststr',
                            'travel_distance': 'dist',
@@ -229,7 +229,7 @@ SENSOR_ATTR_ICON        = {'zone': 'mdi:cellphone-iphone',
                            'last_zone': 'mdi:cellphone-iphone',
                            'base_zone': 'mdi:cellphone-iphone',
                            'zone_timestamp': 'mdi:restore-clock',
-                           'home_distance': 'mdi:map-marker-distance',
+                           'zone_distance': 'mdi:map-marker-distance',
                            'calc_distance': 'mdi:map-marker-distance',
                            'waze_distance': 'mdi:map-marker-distance',
                            'travel_time': 'mdi:clock-outline',
@@ -258,7 +258,7 @@ SENSOR_ID_NAME_LIST     = {'zon': 'zone', 'zon1': 'zone_name1',
                            'lzon': 'last_zone', 'lzon1': 'last_zone_name1',
                            'lzon2': 'last_zone_name2', 'lzon3': 'last_zone_name3',
                            'zonts': 'zone_timestamp',
-                           'hdis': 'home_distance', 'cdis': 'calc_distance',
+                           'zdis': 'zone_distance', 'cdis': 'calc_distance',
                            'wdis': 'waze_distance',
                            'tdis': 'travel_distance', 'ttim': 'travel_time',
                            'dir': 'dir_of_travel', 'intvl':  'interval',
@@ -442,7 +442,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
     base_zone = config.get(CONF_BASE_ZONE)
     tracking_method  = config.get(CONF_TRACKING_METHOD).lower()
     max_iosapp_locate_cnt = int(config.get(CONF_MAX_IOSAPP_LOCATE_CNT))
-    
+
     #set default group if none based on the username and base_zone
     #initially set group to account for backwards compatability
     if group is None:
@@ -452,7 +452,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
             if base_zone is not None:
                 group = group + "::" + base_zone
             account = group
-    
+
     log_msg =("Setting up iCloud3 v{} device tracker for {}:{}:{}").format(
             VERSION, username, group, base_zone)
     if HA_DEVICE_TRACKER_LEGACY_MODE:
@@ -601,7 +601,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
                 _LOGGER.warning("account=%s",account)
                 ICLOUD_GROUPS[group].service_handler_icloud_setinterval(
                                     account, interval, devicename)
-        '''                           
+        '''
         groups   = call.data.get(CONF_GROUP, ICLOUD_GROUPS)
         interval = call.data.get(CONF_INTERVAL)
         devicename = call.data.get(CONF_DEVICENAME)
@@ -1150,7 +1150,7 @@ class Icloud(DeviceScanner):
 #   every device in the account.
 #
 #########################################################
-    
+
     def _polling_loop_5_sec_device(self, now):
         """Keep the API alive. Will be called by HA every 15 seconds"""
         try:
@@ -1227,7 +1227,7 @@ class Icloud(DeviceScanner):
                 group_devicename = self.group + devicename
                 last_dev_timestamp_secs  = self._timestamp_to_secs_dev(
                                     self.last_dev_timestamp.get(group_devicename))
-                                    
+
                 #_LOGGER.warning(">>> Account %s/%s,  trigger %s",\
                 #                self.group, devicename, dev_trigger)
 
@@ -1314,7 +1314,7 @@ class Icloud(DeviceScanner):
                 #Skip if timestamp has not changed from previous iteration.
                 #Also, there will be multiple 'Geographic Enter/Exit'
                 #triggers if zones overlap (home & stationary)
-                
+
                 #Trigger is used to communicate the need that an update is not
                 #needed for this device with another group (instance of iCloud)
                 #This group is part of the trigger value and if this group is
@@ -1582,7 +1582,7 @@ class Icloud(DeviceScanner):
                                               self.mode_short_name, self.group)
                 attrs[ATTR_AUTHENTICATED]  = self.authenticated_time
                 #attrs[ATTR_ALIAS]          = self.devicename_iosapp.get(devicename)
-                
+
                 #trigger, once device is processed, will be
                 #original trigger value from dev_data when polled
                 trigger = self.trigger.get(devicename)
@@ -1590,10 +1590,10 @@ class Icloud(DeviceScanner):
                     attrs[ATTR_TRIGGER] = 'State Change'
                     ts = dt_util.now().strftime(ATTR_TIMESTAMP_FORMAT)
                     attrs[ATTR_TIMESTAMP]  = ts[0:23]
-                    
+
                 #save group in trigger so an update will not be triggered
                 #in the next cycle. It is used by another instane to prevent
-                #a retrigger loop 
+                #a retrigger loop
                 elif self.trigger.get(devicename).find(self.group) == -1:
                     #initialize trigger with 'mode:'
                     if trigger.find(':') == -1:
@@ -1635,7 +1635,7 @@ class Icloud(DeviceScanner):
                     self.friendly_name.get(devicename),  self.base_zone,
                     self.device_type.get(devicename),
                     self.state_this_poll.get(devicename), attrs[ATTR_INTERVAL],
-                    attrs[ATTR_HOME_DISTANCE], attrs[ATTR_WAZE_TIME],
+                    attrs[ATTR_ZONE_DISTANCE], attrs[ATTR_WAZE_TIME],
                     attrs[ATTR_NEXT_UPDATE_TIME])
                 self._LOGGER_info_msg(log_msg)
 
@@ -2053,7 +2053,7 @@ class Icloud(DeviceScanner):
                                                  self.group
                     attrs[ATTR_TRACKING]       = ("{} ({}..{})").format(
                                                   self.track_devicename_list,
-                                                  self.mode_short_name, 
+                                                  self.mode_short_name,
                                                   self.group)
                     attrs[ATTR_AUTHENTICATED]  = self.authenticated_time
                     #attrs[ATTR_ALIAS]      = self.devicename_iosapp.get(devicename)
@@ -2114,7 +2114,7 @@ class Icloud(DeviceScanner):
                         self.mode_short_name,
                         self.state_this_poll.get(devicename),
                         attrs[ATTR_INTERVAL],
-                        attrs[ATTR_HOME_DISTANCE], attrs[ATTR_WAZE_TIME],
+                        attrs[ATTR_ZONE_DISTANCE], attrs[ATTR_WAZE_TIME],
                         attrs[ATTR_NEXT_UPDATE_TIME])
                     self._LOGGER_info_msg(log_msg)
                     log_msg=(
@@ -2944,10 +2944,6 @@ class Icloud(DeviceScanner):
                                                     waze_time_from_home,
                                                     waze_dist_from_home)
 
-                #waze_dist_from_home = waze_dist_from_home
-                #dist_from_home      = dist_from_home
-                #calc_dist_from_home = calc_dist_from_home
-
                 #save for next poll if poor gps
                 self.dist     [devicename] = dist_from_home
                 self.waze_dist[devicename] = waze_dist_from_home
@@ -3025,7 +3021,7 @@ class Icloud(DeviceScanner):
             else:
                 attrs[ATTR_WAZE_DISTANCE] = ''
 
-            attrs[ATTR_HOME_DISTANCE]   = self._km_to_mi(dist_from_home)
+            attrs[ATTR_ZONE_DISTANCE]   = self._km_to_mi(dist_from_home)
             attrs[ATTR_CALC_DISTANCE]   = self._km_to_mi(calc_dist_from_home)
             attrs[ATTR_DIR_OF_TRAVEL]   = dir_of_travel
             attrs[ATTR_TRAVEL_DISTANCE] = self._km_to_mi(dist_last_poll_moved)
@@ -3094,7 +3090,7 @@ class Icloud(DeviceScanner):
                 dev_timestamp   = \
                         self._timestamp_to_time_dev(dev_timestamp)
 
-                last_dist_from_home_s  = attrs[ATTR_HOME_DISTANCE]
+                last_dist_from_home_s  = attrs[ATTR_ZONE_DISTANCE]
                 last_dist_from_home    = \
                             self._mi_to_km(float(last_dist_from_home_s))
 
@@ -3332,11 +3328,19 @@ class Icloud(DeviceScanner):
                 current_zone == 'not_home'):
 
                 section = "test moved"
-                if (calc_dist_last_poll_moved > self.stat_dist_move_limit):
+                reset_stat_zone_flag = False
+                if devicename not in self.stat_zone_moved_total:
+                    reset_stat_zone_flag = True
+
+                elif (calc_dist_last_poll_moved > self.stat_dist_move_limit):
+                    reset_stat_zone_flag = True
+
+                if reset_stat_zone_flag:
+                    section = "test moved-reset stat zone "
                     self.stat_zone_moved_total[devicename] = 0
                     self.stat_zone_timer[devicename] = \
                         self.this_update_seconds + self.stat_zone_still_time
-                    section = "test moved-logmsg"
+
                     log_msg = ("►►STATIONARY ZONE, Reset timer, "
                             "Moved={}, Timer={}").format(
                             calc_dist_last_poll_moved,
@@ -3346,8 +3350,8 @@ class Icloud(DeviceScanner):
 
                 #If moved less than the stationary zone limit, update the
                 #distance moved and check to see if now in a stationary zone
-                else:
-                    section = "test moved-else"
+                elif devicename in self.stat_zone_moved_total:
+                    section = "test moved-else "
                     self.stat_zone_moved_total[devicename] += \
                             calc_dist_last_poll_moved
                     section = "test moved-else-logmsg"
@@ -3376,7 +3380,8 @@ class Icloud(DeviceScanner):
                             self._secs_to(
                                 self.stat_zone_timer.get(devicename)),
                                 self.stat_zone_moved_total.get(devicename))
-
+                else:
+                    self.stat_zone_moved_total[devicename] = 0
 
             dir_of_trav_msg = ("{}({})").format(
                         dir_of_travel, dir_of_trav_msg)
@@ -4296,7 +4301,9 @@ class Icloud(DeviceScanner):
             if current_zone == 'near_zone':
                 info = '{} ●NearZone'.format(info)
 
-            if battery > 0:
+            if battery == 0:
+                info = '{} ●Battery-Unknown'.format(info, battery)
+            else:
                 info = '{} ●Battery-{}%'.format(info, battery)
 
             isold_cnt = self.location_isold_cnt.get(devicename)
@@ -4714,7 +4721,7 @@ class Icloud(DeviceScanner):
         attrs[ATTR_ZONE_TIMESTAMP]     = ''
         attrs[ATTR_INTERVAL]           = ''
         attrs[ATTR_WAZE_TIME]          = ''
-        attrs[ATTR_HOME_DISTANCE]      = 0
+        attrs[ATTR_ZONE_DISTANCE]      = 0
         attrs[ATTR_CALC_DISTANCE]      = 0
         attrs[ATTR_WAZE_DISTANCE]      = 0
         attrs[ATTR_LAST_LOCATED]       = ZERO_HHMMSS
@@ -4740,7 +4747,7 @@ class Icloud(DeviceScanner):
         attrs[ATTR_TRACKING]           = ("{} ({}..{})").format(
                                           self.track_devicename_list,
                                           self.mode_short_name, self.group)
-                                         
+
         attrs[ATTR_AUTHENTICATED]      = ''
         #attrs[ATTR_ALIAS]      = self.devicename_iosapp.get(devicename)
         attrs[ATTR_ICLOUD3_VERSION]    = VERSION

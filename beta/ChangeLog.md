@@ -2,6 +2,16 @@
 
 
 
+#### Version 1.1.0 Beta 5 - July 21
+
+- BREAKING CHANGE - The attribute *home_distance* was changed to *zone_distance*. This avoids confusing the meaning of the *home_distance* attribute when more than one zone is tracked. 
+- Fixed a bug when calculating movement that is used to determine if the device should be put into a stationary zone before the stationary zone had been set up.
+- More documentation cleanup.
+
+
+
+------
+
 #### Version 1.1 0 Beta 4 - July 20
 
 - Changed the *account_name* configuration parameter to *group* to better clarify that this *account_name* parameter has nothing to do with the iCloud account but really refers to how the devices being tracked are grouped together in a platform. (The *account_name* is automatically converted to *group*).
@@ -50,6 +60,8 @@ sensorprefixname:  (Optional) Sensors are normally named using the devicename (o
 Note: If you have a *sensor name prefix* also specified on the *tracked_devices* parameter, it replaces the devicename part of the sensor's entity name, e.g., `sensor.piedpiper_garyc_travel_time`.
 
   
+
+------
 
 #### Version 1.1 0 Beta 3 - July 13
 
