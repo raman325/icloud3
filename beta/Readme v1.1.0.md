@@ -280,7 +280,7 @@ The *tracking_method* and *tracked_devices* configuration parameters are used to
 
 
 
-![screenshot](screenshots/FmF_iCloud3.jpg))
+![screenshot](screenshots/FmF_iCloud3.jpg)
 
 **Authenticating Your iCloud Account**
 
