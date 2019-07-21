@@ -27,9 +27,14 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 
 *Special Note: I want to thank Walt Howd, (iCloud2 fame) who inspired me to tackle this project. I also want to give a shout out to Kovács Bálint, Budapest, Hungary who wrote the Python WazeRouteCalculator and some awesome HA guys (Petro31, scop, tsvi, troykellt, balloob, Myrddyn1, mountainsandcode,  diraimondo, fabaff, squirtbrnr, and mhhbob) who gave me the idea of using Waze in iCloud3...Gary Cobb aka GeeksterGary.* 
 
-![Screenshots](screenshots/Readme-Screenshots.jpg)
+
+
+![Screenshots](screenshots/Lovelace_Info_Card.jpg)
+
+![](/screenshots/Zone_Summary_Card.jpg)
 
 ### Table of Contents
+
   * [INTRODUCTION](https://github.com/gcobb321/icloud3#introduction)
     + [Installation](https://github.com/gcobb321/icloud3#installation)
     + [What's different](https://github.com/gcobb321/icloud3#whats-different)
@@ -275,6 +280,8 @@ The *tracking_method* and *tracked_devices* configuration parameters are used to
 
 
 
+![screenshot](screenshots/FmF_iCloud3.jpg))
+
 **Authenticating Your iCloud Account**
 
 iCloud needs to approve Home Assistant, and iCloud3, access to your account. It does this by sending an authentication code via a text message to a trusted device, which is then entered in Home Assistant. The duration of this authentication is determined by Apple, but is now at 2 months.  
@@ -289,7 +296,6 @@ When your account needs to be authorized, or reauthorized, you will be notified 
 
 **Associating the iPhone Device Name with Home Assistant using the Home Assistant IOS App** 
 The Device Name field of the device in *Settings App>General>About>Name* field on the iPhone and iPad and in the Apple Watch App for the iWatch is stored in the iCloud account and used by Home Assistant to identify the device. HA converts any special characters found in the Device Name field to an underscore ('_'), e.g., 'Gary-iPhone' becomes 'gary_iphone' in *known_devices.yaml*, automations, sensors, scripts, etc. The value, 'gary_iphone', in the Device ID field in the *Home Assistant IOS App>Settings* ties everything together. 
-
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
@@ -488,6 +494,8 @@ To solve this, a special 'near_zone' zone can be created that is a short distanc
 ## ATTRIBUTES
 
 There are numerous attributes that are available for use in automations or to monitor the location of your device. They are shown in following table.  
+
+![Attributes](/Screenshots/Device_Tracker_Attributes.jpg)
 
 ### Location and Polling Attributes
 
