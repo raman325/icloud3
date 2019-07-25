@@ -2229,8 +2229,11 @@ class Icloud(DeviceScanner):
                 return ICLOUD_LOCATION_DATA_ERROR
 
             location       = location_data.get('location')
+            battery_status = ''
             battery        = 0
-            battery_status = location.get('batteryStatus')
+            if batteryStatus in location:
+                battery_status = location.get('batteryStatus')
+
             device_status  = 0
             low_power_mode = None
             loc_attr_timestamp = int(location.get('timestamp')) / 1000
@@ -4946,16 +4949,20 @@ class Icloud(DeviceScanner):
             devicename, device_type, friendlyname, email, picture, sensor name
         '''
         try:
-            email    = None
-            picture  = None
-            name     = None
-            reserved = None
+            email       = None
+            picture     = None
+            fname       = None
+            reserved    = None
             device_type = None
+            prefix_name = None
 
             devicename_parameters = config_parameter.lower().split('>')
             devicename  = slugify(devicename_parameters[0].replace(' ', '', 99))
 
             self.tracked_devices_config_parm[devicename] = config_parameter
+            log_msg = ("Extract Trk_Dev Parm, Parms={}, devicename={}").format(
+                        devicename_parameters, devicename)
+            self._LOGGER_debug_msg(log_msg)
 
             if len(devicename_parameters) > 1:
                 parameters = devicename_parameters[1].strip()
@@ -4999,7 +5006,7 @@ class Icloud(DeviceScanner):
                     log_msg = ("Correct: {}").format(temp)
                     self._LOGGER_warning_msg(log_msg)
                     prefix_name = reserved
-                    reservec = ""
+                    reserved = ""
 
             fname = devicename
             for dev_type in APPLE_DEVICE_TYPES:
@@ -5010,11 +5017,15 @@ class Icloud(DeviceScanner):
                     fname  = fname.replace("-", "", 99).title()
                     device_type  = dev_type
                     break
+
+            device_info = [devicename, device_type, fname,
+                           email, picture, reserved, prefix_name]
+
+            log_msg = ("Extract Trk_Dev Parm, dev_info={}").format(device_info)
+            self._LOGGER_debug_msg(log_msg)
+
         except Exception as err:
             _LOGGER.exception(err)
-
-        device_info = [devicename, device_type, fname,
-                       email, picture, reserved, prefix_name]
 
         return device_info
 
