@@ -1,0 +1,50 @@
+           
+  - title: iCloud Commands
+    icon: mdi:cloud-upload-outline
+    cards: 
+      - type: entities
+        title: iCloud Device Tracker
+        show_header_toggle: false
+        entities:
+          - script.icloud_command_resume_polling
+          - script.icloud_command_pause_polling
+          - script.icloud_command_pause_resume_polling
+          - script.icloud_command_toggle_waze
+          - script.icloud_command_reset_waze_range
+          - script.icloud_command_restart
+          - script.icloud_restart_service
+          - script.icloud_lost_iphone_gary
+          - type: divider
+          - script.icloud_set_interval_15_sec
+          - script.icloud_set_interval_10_min
+          - script.icloud_set_interval_5_hrs
+          - type: divider
+          
+      - type: entities
+        title: iCloud Commands - Gary
+        show_header_toggle: false
+        entities:
+          - script.icloud_command_resume_polling_gary
+          - script.icloud_command_pause_polling_gary
+          - type: divider
+          - script.icloud_command_gary_iphone_zone_home
+          - script.icloud_command_gary_iphone_zone_not_home
+          - script.icloud_command_gary_iphone_zone_quail
+          - type: divider
+          - script.icloud_set_interval_2_min_gary
+          - script.icloud_set_interval_10_min_gary
+          - script.icloud_set_interval_1_min_lillian
+          - script.icloud_set_interval_10_min_lillian
+          - type: divider
+          - script.icloud_gary_iphone_see_away
+         
+      - type: entities
+        entities:
+        - script.icloud_command_info_interval_formula
+        - script.icloud_command_info_logging_toggle
+        - script.icloud_command_debug_test_gps
+        - script.icloud_command_debug_test_old
+
+
+
+

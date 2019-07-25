@@ -1,0 +1,10 @@
+resources:
+
+  - url: /local/custom_cards/icloud3-event-log-card.js?v=1.000
+    type: js
+
+  - title: iCloud Event Log
+    icon: mdi:information-outline 
+    cards: 
+      - type: custom:icloud3-event-log-card
+        entity: sensor.icloud3_event_log
