@@ -2231,7 +2231,7 @@ class Icloud(DeviceScanner):
             location       = location_data.get('location')
             battery_status = ''
             battery        = 0
-            if batteryStatus in location:
+            if 'batteryStatus' in location:
                 battery_status = location.get('batteryStatus')
 
             device_status  = 0
