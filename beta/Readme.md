@@ -31,7 +31,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 
 ![Screenshots](screenshots/Lovelace_Info_Card.jpg)
 
-![](/screenshots/Zone_Summary_Card.jpg)
+![Screenshots](Screenshots/Zone_Summary_Card.jpg)
 
 ### Table of Contents
 
@@ -472,7 +472,7 @@ When using Waze and the distance from your current location to home is more than
 
 There are numerous attributes that are available for use in automations or to monitor the location of your device. They are shown in following table.  
 
-![Attributes](/Screenshots/Device_Tracker_Attributes.jpg)
+![Attributes](Screenshots/Device_Tracker_Attributes.jpg)
 
 ### Location and Polling Attributes
 
