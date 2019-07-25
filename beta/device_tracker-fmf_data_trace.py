@@ -2285,8 +2285,8 @@ class Icloud(DeviceScanner):
         return with False
         '''
 
+        self._LOGGER_info_msg("►►►►►►►►►LOCATING►►►►►►►►►►►►►►►►►►►►►►►►►►►►►►►")
         self._LOGGER_info_msg("►►Refresh FmF Location Data")
-
         refresh_successful = False
         try:
             fmf = self.api.friends
@@ -2320,10 +2320,16 @@ class Icloud(DeviceScanner):
                     log_msg = ("Loading Data, id={}, devicename={}").\
                             format(id_location, devicename)
                     self._LOGGER_info_msg(log_msg)
-        except as err:
-            _LOGGER.Exception(err)
+                    
+                log_msg = ("-------------------------")
+                self._LOGGER_info_msg(log_msg)
+                
+        except Exception as err:
+            _LOGGER.exception(err)
             #pass
-
+            
+        log_msg=("►►►►►►►►►LOCATE SUCCESSFUL►►►{}►►►►►►►►►►►►►►►►►►►").format(refresh_successful)
+        self._LOGGER_info_msg(log_msg)
         return refresh_successful
 
 #----------------------------------------------------------------------------

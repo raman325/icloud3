@@ -1,0 +1,41 @@
+Setting up iCloud3 v1.1.0b6 device tracker for geekstergary@email.com:family:home, using device_tracker.legacy code
+Zone Name Table Initialized {'home': 'Home', 'whse': 'Whse', 'quail': 'Quail'}, Base Zone 'home'
+
+Verifying Waze Route Service component
+Waze Settings: Region=US, Realtime=False, MaxDistance=1609.35, MinDistance=1.61
+
+Stage 1 - This verifies that the iCloud account authentication is valid for the non-2fa account
+-----------------------------------------------------------------------------------------------
+iCloud3 Initalization, Stage 1, Verify iCloud Location Service
+iCloud3 Tracking Method: Find My Friends
+Requesting authorization for geekstergary@email.com:family
+Authenticating as geekstergary@email.com
+Authentication completed successfully
+Authentication for geekstergary@email.com:family successful
+
+Stage 2 - Extract the tracked_devices config parameter information. Match the 2fa-email
+with the contacts in the non-2fa account. Extract the Id and associate it with the devicename.
+-----------------------------------------------------------------------------------------------
+iCloud3 Initalization, Stage 2, Set up tracked devices
+Initializing Device Tracking for user geekstergary@email.com
+Matching devicenames with FmF contact emails
+Matched lillian_iphone with FmF contact Lillian:lillian.2fa@email.com
+Matched gary_iphone with FmF contact Gary:gary.2fa@email.com
+Tracking (FmF) family:gary_iphone:gary.2fa@email.com
+Tracking (FmF) family:lillian_iphone:lillian@email.com
+Tracking Devices gary_iphone, lillian_iphone
+
+Stage 3 - Create Stationary Zones for each device
+-----------------------------------------------------------------------------------------------
+iCloud3 Initalization, Stage 3, Setting up family:gary_iphone
+Gary:home(iphone) Created Stationary Zone
+iCloud3 Initalization, Stage 3, Setting up family:lillian_iphone
+Lillian:home(iphone) Created Stationary Zone
+
+Stage 4 - Locate each device being tracked
+-----------------------------------------------------------------------------------------------
+iCloud3 Initalization, Stage 4, Locating devices
+Gary:home(iphone) Updating, Initializing location
+Gary(iphone:home) not updated, Poor GPS accuracy (1330), Retry #1.
+Lillian:home(iphone) Updating, Poor GPS, #1, (1330)
+Lillian:home(iphone) Update completed using FmF data, Zone=home, Interval=2 hrs, Distance=0, TravelTime=, NextUpdate=6:59:45
