@@ -68,7 +68,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 
 iCloud3 uses the GitHub Releases framework to download all the necessary installation files (iCloud3 custom component, documentation, sample configuration files, sample lovelace cards, etc). Go to the 'Releases' tab at the top of this repository, select the version of iCloud3 you want and download the .zip file. 
 
-- HA 0.92+ -- Create a *config/custom_components/icloud3* directory on the device (Raspberry Pi) running Home Assistant. Copy the four component files in the `custom_components-icloud3` Github directory (*device_tracker.py, init.py, manifest.json, service.yaml*)  into that directory so the directory structure looks like:
+- HA 0.92+ -- Create a *config/custom_components/icloud3* directory on the device (Raspberry Pi) running Home Assistant. Copy the four component files in the `custom_components-icloud3` Github directory (*device_tracker.py, init.py, manifest.json, services.yaml*)  into that directory so the directory structure looks like:
 
   ```
   config
@@ -77,7 +77,7 @@ iCloud3 uses the GitHub Releases framework to download all the necessary install
         device_tracker.py
         __init__.py
         manifest.json
-        service.yaml
+        services.yaml
   ```
 
 
