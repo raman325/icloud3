@@ -43,7 +43,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
       - [What happens if I don't have the IOS app on my device](https://github.com/gcobb321/icloud3#what-happens-if-i-dont-have-the-ios-app-on-my-device)
     + [Home Assistant Configuration](https://github.com/gcobb321/icloud3#home-assistant-configuration)
     + [About Your Apple iCloud Account](https://github.com/gcobb321/icloud3#about-your-apple-icloud-account)
-    + [HACS - ](https://github.com/gcobb321/icloud3#special-zones)
+    + [HACS - Home Assistant Community Store](https://github.com/gcobb321/icloud3#hacs-home-assistant-community-stores)
   * [CONFIGURATION VARIABLES](https://github.com/gcobb321/icloud3#configuration-variables)
     + [User, Account and Device Configuration Items](https://github.com/gcobb321/icloud3#user-account-and-device-configuration-items)
     + [Zone, Interval and Sensor Configuration Items](https://github.com/gcobb321/icloud3#zone-interval-and-sensor-configuration-items)
@@ -362,12 +362,12 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
     - gary_iphone > gary-2fa-acct, gary.png, 1        <<< IOS App Id v2 ' _1'
     - gary_iphone > gary-2fa-acct, gary.png,, garyc   <<< '/local/' will be added
     - gary_iphone > ,gary.png, 1, garyc           <<< using method fmphn or iosapp, email not needed
-	- gary_iphone > /local/gary.png
-	- gary_iphone > gary.png                      <<< FmPhn, iosapp tracking method with badge picture
-	- gary_iphone                                 <<< FmPhn tracking method without a badge picture
-	 
-	Notes:
-	  - A greater then sign ('>') separates the devicename from the parameters.
+    - gary_iphone > /local/gary.png
+    - gary_iphone > gary.png                      <<< FmPhn, iosapp tracking method with badge picture
+    - gary_iphone                                 <<< FmPhn tracking method without a badge picture
+     
+    Notes:
+      - A greater then sign ('>') separates the devicename from the parameters.
     
     
   Example of minimum device_tracker.yaml (using tracking_method: fmf):
