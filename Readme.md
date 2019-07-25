@@ -242,7 +242,7 @@ Only devices on the same iCloud account can share Waze data. In HA, each device_
 
 Apple has enabled '2 Step Authentication' for iCloud accounts. To permit Home Assistant, and iCloud3, to access your iCloud account,  you need to have an authentication code sent via a text message to a trusted device, which is then entered in Home Assistant. The duration of this authentication is determined by Apple, but is now at 2 months.  
 
-When your account needs to be authorized, or reauthorized, you will be notified and the Notification symbol (the bell in the upper right of the Home Assistant screen) will be highlighted. Take the following steps to complete the process:  
+When your account needs to be authorized, or reauthorized, you will be notified and the Notification symbol (the bell in the lower left of the Home Assistant screen) will be highlighted. Take the following steps to complete the process:  
   1. Press the Notification Bell in the upper right-hand corner of your Home Assistant screen.
 
   2. A window is displayed, listing the trusted devices associated with your account. It will list an number (0, 1, 2, etc.) next to the phone number that can receive the text message containing the 2 Step Authentication code number used to authenticate the computer running Home Assistant (your Raspberry Pi for example).
