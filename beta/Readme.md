@@ -1,7 +1,7 @@
 # iCloud3  Device Tracker Custom Component  
 
 - Version:  1.1.0
-- Released:  July 19, 2019
+- Released:  July 25, 2019
 
 ------
 
@@ -43,17 +43,19 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
       - [What happens if I don't have the IOS app on my device](https://github.com/gcobb321/icloud3#what-happens-if-i-dont-have-the-ios-app-on-my-device)
     + [Home Assistant Configuration](https://github.com/gcobb321/icloud3#home-assistant-configuration)
     + [About Your Apple iCloud Account](https://github.com/gcobb321/icloud3#about-your-apple-icloud-account)
+    + [HACS - ](https://github.com/gcobb321/icloud3#special-zones)
   * [CONFIGURATION VARIABLES](https://github.com/gcobb321/icloud3#configuration-variables)
     + [User, Account and Device Configuration Items](https://github.com/gcobb321/icloud3#user-account-and-device-configuration-items)
     + [Zone, Interval and Sensor Configuration Items](https://github.com/gcobb321/icloud3#zone-interval-and-sensor-configuration-items)
     + [Waze Configuration Items](https://github.com/gcobb321/icloud3#waze-configuration-items)
-  * [SPECIAL ZONES](https://github.com/gcobb321/icloud3#special-zones)
-    + [Dynamic Stationary Zone](https://github.com/gcobb321/icloud3#dynamic-stationary-zone)
-    + [near_zone Zone](https://github.com/gcobb321/icloud3#near_zone-zone)
   * [ATTRIBUTES](https://github.com/gcobb321/icloud3#attributes)
     + [Location and Polling Attributes](https://github.com/gcobb321/icloud3#location-and-polling-attributes)
     + [Device Status Information Attributes](https://github.com/gcobb321/icloud3#device-status-information-attributes)
     + [Other Attributes](https://github.com/gcobb321/icloud3#other-attributes)
+  * [iCLOUD3 EVENT LOG](https://github.com/gcobb321/icloud3#icloud3-event-log)
+  * [SPECIAL ZONES](https://github.com/gcobb321/icloud3#special-zones)
+    + [Dynamic Stationary Zone](https://github.com/gcobb321/icloud3#dynamic-stationary-zone)
+    + [near_zone Zone](https://github.com/gcobb321/icloud3#near_zone-zone)
   * [SENSORS CREATED FROM DEVICE ATTRIBUTES](https://github.com/gcobb321/icloud3#sensors-created-from-device-attributes)
     + [How they are used in Automations and on Lovelace Cards](https://github.com/gcobb321/icloud3#how-they-are-used-in-automations-and-on-lovelace-cards)
     + [Special Sensors](https://github.com/gcobb321/icloud3#special-sensors)
@@ -75,7 +77,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 
 iCloud3 uses the GitHub Releases framework to download all the necessary installation files (iCloud3 custom component, documentation, sample configuration files, sample lovelace cards, etc). Go to the 'Releases' tab at the top of this repository, select the version of iCloud3 you want and download the .zip file. 
 
-- HA 0.92+ -- Create a *config/custom_components/icloud3* directory on the device (Raspberry Pi) running Home Assistant. Copy the five component files in the `custom_components-icloud3` Github directory (*device_tracker.py, pyicloud_ic3.py, init.py, manifest.json, service.yaml*)  into that directory so the directory structure looks like:
+- HA 0.92+ -- Create a *config/custom_components/icloud3* directory on the device (Raspberry Pi) running Home Assistant. Copy the five component files in the `custom_components-icloud3` Github directory (*device_tracker.py, pyicloud_ic3.py, init.py, manifest.json, services.yaml*)  into that directory so the directory structure looks like:
 
   ```
   config
@@ -85,11 +87,12 @@ iCloud3 uses the GitHub Releases framework to download all the necessary install
         pyicloud_ic3.py
         __init__.py
         manifest.json
-        service.yaml
+        services.yaml
   ```
 
+*Note:* The WazeRouteCalculator component is use to calculate driving distance and time from your location to your Home zone (or another *base_zone* zone). Normally, it is installed with the Home Assistant and Hass.io frameworks. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and install Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from the Home zone  (or another *base_zone* zone). Add the `distance_method: calc` parameter to your device_tracker: icloud3 configuration setup (see more information on this and other parameters later).
 
-*Note:* The WazeRouteCalculator component is use to calculate driving distance and time from your location to your Home zone (or another *base_zone* zone). Normally, it is installed with the Home Assistant and Hass.io frameworks. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and instal Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from the Home zone  (or another *base_zone* zone). Add the `distance_method: calc` parameter to your device_tracker: icloud3 configuration setup (see more information on this and other parameters later).
+iCloud3 logs information to the HA log file and to an internal table that can be viewed using the iCloud3 Event Log Lovelace Custom Card. Information about this custom card, and installation instructions are described here.
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
@@ -116,6 +119,8 @@ iCloud3 has many features not in the base iCloud device_tracker that is part of 
 | Dynamic Stationary Zone | No | Yes, a Stationary Zone is created if no movement has been detected in 8-minutes (configurable). The polling interval is set to 30-minutes (default) until zone exit notification is received. |
 | Service call commands | Set polling interval, Reset devices | Set polling interval, Reset devices, Pause/restart polling, Change zone, Enable/disable Waze Route information usage, information logging (some commands can be for all devices or for a specific device) |
 | Track device from more than one location | No, can only track from the 'home' zone | Yes, can track from the 'home' zone and another *base_zone* zone (office, second home, etc.). |
+| Display an Event Log of significant events | No | Yes |
+| Create Sensors for device attributes | No | Yes. Sensors created can be customized to only create the ones you want or exclude sensors from thone4 normally created by iCloud3. |
 | | | |
 | <u>Geekster Statistics:</u> | | |
 | ● Config variables | 5 | 22 |
@@ -202,12 +207,12 @@ To integrate iCloud3 in Home Assistant, add the following section to your `confi
 ```yaml
 device_tracker:
   - platform: icloud3
-    username: gary_fmf@email.com       <<< Your Apple iCloud Account ID for your FmF iCloud account
-    password: gary_fmf_password
+    username: gary-fmf-acct@email.com       <<< Your Apple iCloud Account ID for your FmF iCloud account
+    password: gary-fmf-password
     group: family                      <<< Name of this group of tracked devices.
     tracked_devices:                   <<< Devices to be tracked
-      - gary_iphone > gary.real@email.com, gary.png
-      - lillian_iphone > lillian.real@email.com, lillian.png
+      - gary_iphone > gary-2fa-acct@email.com, gary.png
+      - lillian_iphone > lillian-2fa-acct@email.com, lillian.png
 ```
 
 If you have several devices that are associated with different Apple iCloud accounts or if you want to use a location other than 'home' as your *base_zone*, add a second iCloud3 platform with the other iCloud account or zone information.
@@ -217,21 +222,21 @@ This is an example of using two icloud3 platforms.
 ```yaml
 device_tracker:
   - platform: icloud3
-    username: gary_fmf@email.com       <<< Your Apple iCloud Account ID for your FmF iCloud account
-    password: gary_fmf_password
+    username: gary-fmf-acct@email.com       <<< Your Apple iCloud Account ID for your FmF iCloud account
+    password: gary-fmf-password
     group: family                      <<< Name of this group of tracked devices.
     tracked_devices:                   <<< Devices to be tracked
-      - gary_iphone > gary.real@email.com, gary.png
-      - lillian_iphone > lillian.real@email.com, lillian.png
+      - gary_iphone > gary-2fa-acct@email.com, gary.png
+      - lillian_iphone > lillian-2fa-acct@email.com, lillian.png
 
 device_tracker:
   - platform: icloud3
-    username: gary_fmf@email.com       <<< Your Apple iCloud Account ID 
-    password: gary_fmf_password
+    username: gary-fmf-acct@email.com       <<< Your Apple iCloud Account ID 
+    password: gary-fmf-password
     group: work                        <<< Name of this group of tracked devices.
     base_zone: whse                    <<< Track from the 'whse' zone instead of 'home'
     tracked_devices:                   <<< Devices to be tracked
-      - gary_iphone > gary.real@email.com, gary.png
+      - gary_iphone > gary-2fa-acct@email.com, gary.png
 ```
 
 *Note:* When a devices location is polled, the Waze Route Calculator is called to get distance from home or another *base_zone* zone, and the travel time information. The data returned from the Waze Route Calculator is saved. On the next poll of any device using iCloud3 on the same account, the saved data is searched to see if there is any entry that is close to your current location instead of calling the Waze Route Calculator again
@@ -286,10 +291,11 @@ The *tracking_method* and *tracked_devices* configuration parameters are used to
 
 iCloud needs to approve Home Assistant, and iCloud3, access to your account. It does this by sending an authentication code via a text message to a trusted device, which is then entered in Home Assistant. The duration of this authentication is determined by Apple, but is now at 2 months.  
 
-When your account needs to be authorized, or reauthorized, you will be notified and the Notification symbol (the bell in the upper right of the Home Assistant screen) will be highlighted. Take the following steps to complete the process:  
-    1. Press the Notification Bell in the upper right-hand corner of your Home Assistant screen.
-    2. A window is displayed, listing the trusted devices associated with your account. It will list an number (0, 1, 2, etc.) next to the phone number that can receive the text message containing the 2 Step Authentication code number used to authenticate the computer running Home Assistant (your Raspberry Pi for example).
-    3. Type the number.
+When your account needs to be authorized, or reauthorized, you will be notified and the Notification Bell ![Notification_Bell](screenshots/Notification_Bell.jpg)on the Home Assistant screen. This can be found in the upper right-corner for HA 95 and earlier and in the lower-left for HA 96 and later.  Take the following steps to complete the process:  
+    1. Press the Notification Bell of your Home Assistant screen to open the Notification window.
+        2. A window is displayed, listing the trusted devices associated with your account. It will list an number (0, 1, 2, etc.) next to the phone number that can receive the text message containing the 2 Step Authentication code number used to authenticate the computer running Home Assistant (your Raspberry Pi for example).
+        3. Type the number.
+
   4. A text message is sent. Type the authentication code you receive in the next window that is displayed.
 
 
@@ -342,7 +348,7 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 
 | Field              | Description/Notes                                            |
 | ------------------ | ------------------------------------------------------------ |
-| email_address      | *Required for the tracking_method: fmf*. FmF uses the "real" email address of your "friends" iCloud account to link it with the FmF account. <br><br>You can use the complete email address `(gary.real@email.com)` or just the name part `(gary.fmf`).<br><br>Not required if you are using the Find-my-Phone (fmphn) or iosapp (iosapp#) tracking methods. (You can omit the comma placeholder) |
+| email_address      | *Required for the tracking_method: fmf*. FmF uses the "real" email address of your "friends" iCloud account to link it with the FmF account. <br><br>You can use the complete email address `(gary-2fa-acct@email.com)` or just the name part `(gary.fmf`).<br><br>Not required if you are using the Find-my-Phone (fmphn) or iosapp (iosapp#) tracking methods. (You can omit the comma placeholder) |
 | badge_picture_name | The file name containing a picture of the person normally associated with the device. See the sensor_badge section of the iCloud3 documentation for more information about the sensor_badge.<br>The file is normally in the ```config/www/``` directory (referred to as '/local/' in HA). You can use the full name ```(/local/gary.png)``` or an abbreviated name ```(gary.png)```. |
 | IOS App Id Number  | At the present time, the IOS App version 2 does not provide any means of identifying the physical device with the device being tracked. A number '_2', ' _3', etc is added to the attribute to make the attribute name unique.<br><br>This field is reserved for the device's Id number assigned by the IOS App. This field is not needed if you are using version 1. |
 | sensor_name_prefix | See the Sensor section of the documentation for a complete description of this field. (garyc in the example below) |
@@ -352,9 +358,9 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 ```yaml
   Examples:
   
-    - gary_iphone > gary.real@email.com, /local/gary.png
-    - gary_iphone > gary.real, gary.png, 1        <<< IOS App Id v2 ' _1'
-    - gary_iphone > gary.real, gary.png,, garyc   <<< '/local/' will be added
+    - gary_iphone > gary-2fa-acct@email.com, /local/gary.png
+    - gary_iphone > gary-2fa-acct, gary.png, 1        <<< IOS App Id v2 ' _1'
+    - gary_iphone > gary-2fa-acct, gary.png,, garyc   <<< '/local/' will be added
     - gary_iphone > ,gary.png, 1, garyc           <<< using method fmphn or iosapp, email not needed
 	- gary_iphone > /local/gary.png
 	- gary_iphone > gary.png                      <<< FmPhn, iosapp tracking method with badge picture
@@ -367,12 +373,12 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
   Example of minimum device_tracker.yaml (using tracking_method: fmf):
   
   - platform: icloud3
-    username: gary_fmf@email.com
-    password: gary_fmf_password
+    username: gary-fmf-acct@email.com
+    password: gary-fmf-password
     group: family
     track_devices:
-      - gary_iphone > gary.real@email.com, gary.png
-      - lillian_iphone > lillian.real@email.com, lillian.png
+      - gary_iphone > gary-2fa-acct@email.com, gary.png
+      - lillian_iphone > lillian-2fa-acct@email.com, lillian.png
 ```
 
   
@@ -457,35 +463,6 @@ When using Waze and the distance from your current location to home is more than
 *Default: .60*  
 
 *Note:* Using the default value, the next update will be 3/4 of the time it takes to drive home from your current location. The one after that will be 3/4 of the time from that point. The result is a smaller interval as you get closer to home and a larger one as you get further away.  
-
-*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
-
-
-
-## SPECIAL ZONES  
-
-There are two zones that are special to the iCloud3 device tracker - the Dynamic Stationary Zone and the NearZone zone.
-
-### Dynamic Stationary Zone  
-
-A Dynamic Stationary Zone is a zone that iCloud3 creates when the device has not moved much over a period of time. Examples might be when you are at a mall, doctor's office, restaurant, friend's house, etc. If the device is stationary, it's Stationary Zone location (latitude and longitude) is automatically updated with the gps location, the device state is changed to Stationary and the interval time is set to the *stationary_inzone_interval* value (default is 30 mins). This almost eliminates the number of times the device must be polled to see how far it is from home when you haven't moved for a while. When you leave the Stationary Zone, the IOS App notifies Home Assistant that the Stationary Zone has been exited and the device tracking begins again.
-
-*Note:* You do not have to create the Stationary Zone in the zones.yaml file, the iCloud3 device tracker automatically creates one for every device being tracked when Home Assistant is started. The initial location is latitude 90°, longitude 180° (the North Pole). It's name is *devicename_Stationary*.  
-
-Details about the Stationary Zone:
-
-- You must be at least 2.5 times the Home zone radius.
-- It's radius is 2 times the Home zone radius.
-- The maximum distance you can move in a specific amount of time is 1.5 times the Home zone radius.
-- The amount of time you must be still is specified in the ``` stationary_still_time ``` configuration parameter (default is 8 minutes).
-
-### near_zone Zone  
-
-There may be times when the Home Zone's (or another zone's) cell service is poor and does not track the device adequately when the device nears a zone. This can create problems triggering automations when the device enters the zone since the Find-My-Friends location service has problems monitoring it's location.  
-
-To solve this, a special 'near_zone' zone can be created that is a short distance from the real zone that will wake the device up. The IOS App stores the zone's location on the device and will trigger a zone enter/exit notification which will then change the device's device_tracker state to the 'near_zone' zone and change the polling interval to every 15-secs. It is not perfect and might not work every time but it is better than automations never being triggered when they should.
-
-*Note:* You can have more than one 'near_zone' zone in the zones.yaml file. Set them up with a unique name that starts with 'near_zone';, e.g., near_zone_home, near_zone_quail, near_zone_work, etc. The *friendly_name* attribute should be NearZone for each one.
 
 *[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
 
@@ -594,6 +571,75 @@ The trigger causing the last device update. It is also used to communicate betwe
 
 
 
+## iCLOUD3 EVENT LOG
+
+As iCloud3 runs, various entries are written to the HA log file that show device information, how it is tracked, operational errors, startup information and other items that may help determine what is going on if there is a problem. A lot of this information is also written to the iCloud3 Event Log which can be viewed using the iCloud3 Event Log Lovelace Card. 
+
+Below are 3 screens. The one on the left shows iCloud3 starting up, the middle one shows arriving Home and the one on the right shows entering the 'Whse' zone.
+
+![Event_Log_card](screenshots/Event_Log_card.jpg)
+
+**Installation**
+
+Custom Lovelace cards are typically stored in the */www/custom_cards* directory. Do the following:
+
+1. Create the */www/custom_cards* directory if it does not exist. 
+
+2. Copy the *icloud3-event-log-card.js* into the */www/custom-cards* directory. If you are already using custom cards and they are in a different directory,  copy the *.js* file into the one you are using.
+
+3. Open the *ui-lovelace.yaml* file and add the following lines to the beginning of the file. Again, change the directory name if you are using a different location.
+
+   ```yaml
+   resources:
+     - url: /local/custom_cards/icloud3-event-log-card.js?v=1.000
+       type: js
+   ```
+
+4. Add the following lines to the *ui-lovelace.yaml* file to create the custom card. 
+
+   ```yaml
+    - title: iCloud Event Log
+       icon: mdi:information-outline 
+       cards: 
+         - type: custom:icloud3-event-log-card
+           entity: sensor.icloud3_event_log
+   ```
+
+More information is found in the Home Assistant Lovelace documentation regarding setting up and using custom cards. Be sure to refer to if if you have any problems. Go [here](https://community.home-assistant.io/t/how-do-i-add-custom-cards-with-the-lovelace-ui/97902) for more information If you are not using the *ui-lovelace.yaml* file to set up your cards.
+
+*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
+
+
+
+## SPECIAL ZONES  
+
+There are two zones that are special to the iCloud3 device tracker - the Dynamic Stationary Zone and the NearZone zone.
+
+### Dynamic Stationary Zone  
+
+A Dynamic Stationary Zone is a zone that iCloud3 creates when the device has not moved much over a period of time. Examples might be when you are at a mall, doctor's office, restaurant, friend's house, etc. If the device is stationary, it's Stationary Zone location (latitude and longitude) is automatically updated with the gps location, the device state is changed to Stationary and the interval time is set to the *stationary_inzone_interval* value (default is 30 mins). This almost eliminates the number of times the device must be polled to see how far it is from home when you haven't moved for a while. When you leave the Stationary Zone, the IOS App notifies Home Assistant that the Stationary Zone has been exited and the device tracking begins again.
+
+*Note:* You do not have to create the Stationary Zone in the zones.yaml file, the iCloud3 device tracker automatically creates one for every device being tracked when Home Assistant is started. The initial location is latitude 90°, longitude 180° (the North Pole). It's name is *devicename_Stationary*.  
+
+Details about the Stationary Zone:
+
+- You must be at least 2.5 times the Home zone radius.
+- It's radius is 2 times the Home zone radius.
+- The maximum distance you can move in a specific amount of time is 1.5 times the Home zone radius.
+- The amount of time you must be still is specified in the ``` stationary_still_time ``` configuration parameter (default is 8 minutes).
+
+### "near_zone" Zone  
+
+There may be times when the Home Zone's (or another zone's) cell service is poor and does not track the device adequately when the device nears a zone. This can create problems triggering automations when the device enters the zone since the Find-My-Friends location service has problems monitoring it's location.  
+
+To solve this, a special 'near_zone' zone can be created that is a short distance from the real zone that will wake the device up. The IOS App stores the zone's location on the device and will trigger a zone enter/exit notification which will then change the device's device_tracker state to the 'near_zone' zone and change the polling interval to every 15-secs. It is not perfect and might not work every time but it is better than automations never being triggered when they should.
+
+*Note:* You can have more than one 'near_zone' zone in the zones.yaml file. Set them up with a unique name that starts with 'near_zone';, e.g., near_zone_home, near_zone_quail, near_zone_work, etc. The *friendly_name* attribute should be NearZone for each one.
+
+*[Top](https://github.com/gcobb321/icloud3#table-of-contents)*
+
+
+
 ## SENSORS CREATED FROM DEVICE ATTRIBUTES
 
 ### How they are used in Automations and on Lovelace Cards
@@ -638,9 +684,9 @@ The following sensors are updated using the device_tracker's attributes values:
 
 The sensors can be named several ways using the 4th field (*sensor_name_prefix*) in the *tracked_devices* configuration parameter. Normally, the devicename is used, however, a custom name can be used for each device if it is specified. The following examples show the *tracked_devices* devicename parameter line:
 
-- `lillian_iphone > lillian.real@email.com, lillian.png`
+- `lillian_iphone > lillian-2fa-acct@email.com, lillian.png`
   No special name is specified so the devicename (*lillian_iphone*) is used as the prefix, e.g.,  `sensor.lillian_iphone_zone_distance`
-- `gary_iphone > gary.real@email.com, gary.png,, garyc `
+- `gary_iphone > gary-2fa-acct@email.com, gary.png,, garyc `
   A special prefix name (*garyc*) is specified, so that will be used, e.g., `sensor.garyc_zone_distance`
 
 If the *base_zone* parameter is specified, it will be added to the sensor name before the devicename. For example:
@@ -658,9 +704,9 @@ The '_badge Sensor' is used to display either the zone or distance from home for
 
 Example:
 
-- `lillian_iphone > lillian.real@email.com, lillian.png* `
+- `lillian_iphone > lillian-2fa-acct@email.com, lillian.png* `
   The *sensor.lillian_iphone_badge* is created with the picture file */local/lillian.png*
-- `gary_iphone > gary.real, /local/gary.png,, garyc* `
+- `gary_iphone > gary-2fa-acct, /local/gary.png,, garyc* `
   The *sensor.garyc_badge* sensor is created with the picture file */local/gary.png*
 
 
