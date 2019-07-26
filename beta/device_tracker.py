@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '1.1.0b6'      #Custom Component Updater
+VERSION = '1.1.0b7'      #Custom Component Updater
 
 import logging
 import os
@@ -737,7 +737,7 @@ class Icloud(DeviceScanner):
         event_msg = ("iCloud3 Tracking Method: {}").format(self.mode_name)
         self._save_event_halog_info("*", event_msg)
 
-        if (PYICLOUD_IC3_IMPORT_SUCCESSFUL == False and \
+        if (PYICLOUD_IC3_IMPORT_SUCCESSFUL is False and \
                 self.CURRENT_MODE_FMF_FMPHN):
             self.mode = MODE_IOSAPP
             event_msg = ("Error: 'pyicloud_ic3.py' module not found")
@@ -1054,7 +1054,7 @@ class Icloud(DeviceScanner):
             PyiCloudFailedLoginException, PyiCloudNoDevicesException)
 
         try:
-            if restarting_flag == False:
+            if restarting_flag is False:
                 if self.api is None:
                     event_msg = ("iCloud/FmF API Error, No device API information "
                                     "for devices. Resetting iCloud")
@@ -1406,8 +1406,8 @@ class Icloud(DeviceScanner):
             log_msg = ((
                 "{}:{}({}) Retrying Update, Update was not "
                 "completed in last cycle, Retry #{}").format(
-                self.friendly_name.get(devicename), self.base_zone,
-                self.device_type.get(devicename),
+                self.friendly_name.get(devicename), self.group,
+                        self.device_type.get(devicename),
                 self.device_being_updated_retry_cnt.get(devicename)))
             self._LOGGER_info_msg(log_msg)
 
@@ -1598,8 +1598,9 @@ class Icloud(DeviceScanner):
 
             except Exception as err:
                 _LOGGER.exception(err)
-                log_msg = ("Error Updating Device {}:{}({})").format(\
-                            devicename,  self.base_zone, err)
+                log_msg = ("{}:{}({}) Error Updating Device, {}").format(\
+                            self.friendly_name.get(devicename), self.group,
+                            self.device_type.get(devicename), err)
                 self._LOGGER_error_msg(log_msg)
 
             try:
@@ -1609,7 +1610,7 @@ class Icloud(DeviceScanner):
                     "{}:{}({}) Update completed using iosapp data, Zone={}, "
                     "Interval={}, Distance={}, TravelTime={}, "
                     "NextUpdate={}").format(
-                    self.friendly_name.get(devicename),  self.base_zone,
+                    self.friendly_name.get(devicename), self.group,
                     self.device_type.get(devicename),
                     self.state_this_poll.get(devicename), attrs[ATTR_INTERVAL],
                     attrs[ATTR_ZONE_DISTANCE], attrs[ATTR_WAZE_TIME],
@@ -1679,7 +1680,7 @@ class Icloud(DeviceScanner):
                 if current_state != self.state_last_poll.get(devicename):
                     log_msg = ("{}:{}({}) Zone Change Detected, "
                         "From={}, To={}").format(
-                        self.friendly_name.get(devicename), self.base_zone,
+                        self.friendly_name.get(devicename), self.group,
                         self.device_type.get(devicename),
                         self.state_last_poll.get(devicename), current_state)
                     self._LOGGER_info_msg(log_msg)
@@ -1714,7 +1715,7 @@ class Icloud(DeviceScanner):
                     self.log_debug_msgs_trace_flag = False
 
                     log_msg = ("{}:{}({}) Canceling Update Retry").format(
-                          self.friendly_name.get(devicename), self.base_zone,
+                          self.friendly_name.get(devicename), self.group,
                         self.device_type.get(devicename))
                     self._LOGGER_info_msg(log_msg)
 
@@ -1724,7 +1725,7 @@ class Icloud(DeviceScanner):
 
                     log_msg = ("{}:{}({}) Retrying Update, Update was not "
                             "completed in last cycle").format(
-                            self.friendly_name.get(devicename), self.base_zone,
+                            self.friendly_name.get(devicename), self.group,
                             self.device_type.get(devicename))
                     self._LOGGER_info_msg(log_msg)
 
@@ -1833,9 +1834,9 @@ class Icloud(DeviceScanner):
                     do_not_update_flag = True
 
                     log_msg = (
-                        "{}:{}({}) not updated, in zone {}. "
+                        "{}:{}({}) Not updated, in zone {}. "
                         "Next update at {}").format(
-                        self.friendly_name.get(devicename), self.base_zone,
+                        self.friendly_name.get(devicename), self.group,
                         self.device_type.get(devicename),
                         self.state_this_poll.get(devicename),
                         self.next_update_time.get(devicename))
@@ -1856,7 +1857,7 @@ class Icloud(DeviceScanner):
                          self.state_this_poll.get(devicename), update_reason)
                 self._LOGGER_debug_msg(log_msg)
                 log_msg = ("{}:{}({}) Updating, {}").format(
-                        self.friendly_name.get(devicename), self.base_zone,
+                        self.friendly_name.get(devicename), self.group,
                         self.device_type.get(devicename),
                         update_reason)
                 self._LOGGER_info_msg(log_msg)
@@ -1873,7 +1874,7 @@ class Icloud(DeviceScanner):
                     dev_data = self._setup_data_icloud(devicename)
 
                 #An error ocurred accessing the iCloud acount
-                if dev_data[0] == False:
+                if dev_data[0] is False:
                     log_msg = ("Error, no location data for {}:{}").format(
                                 self.group, devicename)
                     self._LOGGER_error_msg(log_msg)
@@ -1911,9 +1912,9 @@ class Icloud(DeviceScanner):
                     else:
                         do_not_update_flag = True
                         log_msg = (
-                            "{}:{}({}) not updated, old iCloud location data, "
+                            "{}:{}({}) Not updated, old iCloud location data, "
                             "Age {}, Retry #{}").format(
-                            self.friendly_name.get(devicename), self.base_zone,
+                            self.friendly_name.get(devicename), self.group,
                             self.device_type.get(devicename),
                             age_str, self.location_isold_cnt.get(devicename))
                         self._LOGGER_info_msg(log_msg)
@@ -1932,10 +1933,10 @@ class Icloud(DeviceScanner):
                         gps_accuracy)
 
                     log_msg = (
-                        "{}({}:{}) not updated, Poor GPS accuracy "
+                        "{}:{}({}) Not updated, Poor GPS accuracy "
                         "({}), Retry #{}.").format(
-                        self.friendly_name.get(devicename),
-                        self.device_type.get(devicename),  self.base_zone,
+                        self.friendly_name.get(devicename), self.group,
+                        self.device_type.get(devicename),  
                         gps_accuracy,
                         self.poor_gps_accuracy_cnt.get(devicename))
                     self._LOGGER_info_msg(log_msg)
@@ -2070,11 +2071,13 @@ class Icloud(DeviceScanner):
                     self.device_being_updated_flag[devicename] = False
 
                 except Exception as err:
-                    log_msg = ("Error Updating Device {}:{}({})").format(\
-                                devicename,  self.base_zone, err)
+                    log_msg = (" {}:{}({}) Error Updating Device, {}").format(\
+                            self.friendly_name.get(devicename), self.group,
+                            self.device_type.get(devicename), err)
                     self._LOGGER_error_msg(log_msg)
 
                     _LOGGER.exception(err)
+                        
 
                 try:
                     event_msg = ("Update via {} completed, next "
@@ -2086,7 +2089,7 @@ class Icloud(DeviceScanner):
                         "{}:{}({}) Update completed using {} data, Zone={}, "
                         "Interval={}, Distance={}, TravelTime={}, "
                         "NextUpdate={}").format(
-                        self.friendly_name.get(devicename), self.base_zone,
+                        self.friendly_name.get(devicename), self.group,
                         self.device_type.get(devicename),
                         self.mode_short_name,
                         self.state_this_poll.get(devicename),
@@ -2164,7 +2167,7 @@ class Icloud(DeviceScanner):
             self._LOGGER_debug_msg(log_msg)
             self._save_event(devicename, 'Preparing FmF Location Data')
 
-            if self._refresh_fmf_location_data() == False:
+            if self._refresh_fmf_location_data() is False:
                 #No icloud data, reauthenticate (status=None)
                 try:
                     log_msg = ("FmF Reauthentication for {}:{}:{}").\
@@ -2190,7 +2193,7 @@ class Icloud(DeviceScanner):
                     return ICLOUD_LOCATION_DATA_ERROR
 
             #Successful authentication, get locateion data again
-            if self._refresh_fmf_location_data() == False:
+            if self._refresh_fmf_location_data() is False:
                 log_msg = ("FmF Reauthentication Error, no location data available")
                 self._LOGGER_error_msg(log_msg)
                 log_msg = ("Verify the ability to locate friends using the "
@@ -2222,7 +2225,7 @@ class Icloud(DeviceScanner):
 
 
             location_data = self.fmf_location_data.get(devicename)
-            if location_data == None:
+            if location_data is None:
                 log_msg = ("No location data available for {}:{}").format(
                            self.group, devicename)
                 self._LOGGER_error_msg(log_msg)
@@ -2284,27 +2287,77 @@ class Icloud(DeviceScanner):
         If no location data was returned from pyicloid_ic3,
         return with False
         '''
-
         self._LOGGER_debug_msg("►►Refresh FmF Location Data")
+        from .pyicloud_ic3 import PyiCloudNoDevicesException
 
+        retry_cnt = 0
         refresh_successful = False
-        try:
-            fmf = self.api.friends
-            self.fmf_location_data = {}
-
-            for location_data in fmf.locations:
-                id_location = location_data.get('id')
-                if self.fmf_id.get(id_location):
-                    devicename = self.fmf_id[id_location]
-                    self.fmf_location_data[devicename] = location_data
-                    refresh_successful = True
-
-                    log_msg = ("Loading Data, id={}, devicename={}").\
-                            format(id_location, devicename)
+        
+        age = self._secs_since(self.last_fmf_refresh)
+        log_msg = ("FmF data refreshed {} secs ago").format(age)
+        if age <= 5:
+            log_msg += ", location data reused"
+            self._LOGGER_debug_msg(log_msg)
+            return True
+        log_msg += ", will be refreshed"
+        self._LOGGER_debug_msg(log_msg)
+            
+        while retry_cnt < 3:
+            try:
+                retry_cnt += 1
+                fmf = self.api.friends
+                
+                if retry_cnt > 1:
+                    log_msg = ("FmF retrying data refresh, cnt={}").format(retry_cnt)
                     self._LOGGER_debug_msg(log_msg)
-        except:
-            pass
-
+                
+                if fmf is None:
+                    self.api.authenticate()
+                    self.authenticated_time = \
+                            dt_util.now().strftime(self.um_date_time_strfmt)
+                    fmf = self.api.friends       
+                    
+                    log_msg = ("Reauthenticated FmF account for {}:{}").\
+                            format(self.group, self.base_zone)        
+                    self._LOGGER_info_msg(log_msg)
+                        
+                if fmf:
+                    self.fmf_location_data = {}
+                    locations = fmf.locations
+                    if locations:
+                        for location in locations:
+                            contact_id = location.get('id')
+                            
+                            if self.fmf_id.get(contact_id):
+                                devicename = self.fmf_id[contact_id]
+                                self.fmf_location_data[devicename] = location
+                                refresh_successful = True      
+                                
+                                log_msg = ("{}:{}({}) FmF refresh successful, "
+                                    "FmF Id={}").format(
+                                    self.friendly_name.get(devicename), self.group,
+                                    self.device_type.get(devicename), contact_id)
+                                self._LOGGER_info_msg(log_msg)
+                                             
+                    if refresh_successful is True:
+                        self.last_fmf_refresh = self.this_update_seconds
+                        break
+                        
+            except PyiCloudNoDevicesException:
+                self._LOGGER_error_msg("No FmF Devices found")
+                
+            except Exception as err:
+                _LOGGER.exception(err)
+                self._LOGGER_error_msg("FmF Location Data Error")
+                #pass
+            
+            if refresh_successful is False:
+                self.authenticated_time = ''
+                
+                log_msg = ("FmF Reauthentication Error/Data, no data "
+                            "available, Aborting")
+                self._LOGGER_error_msg(log_msg)
+            
         return refresh_successful
 
 #----------------------------------------------------------------------------
@@ -2332,22 +2385,22 @@ class Icloud(DeviceScanner):
        'isMac': False
         '''
 
-        fct_name = "_setup_data_icloud"
+        fct_name = "_setup_data_fmphn"
         from .pyicloud_ic3 import PyiCloudNoDevicesException
 
         try:
-            log_msg = ("= = = Prep Data From iCloud = = = (Now={})").format(
+            log_msg = ("= = = Prep Data From FmPhn = = = (Now={})").format(
                      self.this_update_seconds)
             self._LOGGER_debug_msg(log_msg)
 
-            self._save_event(devicename, 'Preparing iCloud Location Data')
+            self._save_event(devicename, 'Preparing FmPhn Location Data')
 
             #Get device attributes from iCloud
             device   = self.icloud_api_devices.get(devicename)
             status   = device.status(DEVICE_STATUS_SET)
 
             self._trace_device_attributes(
-                devicename, 'iCloud Status', fct_name, status)
+                devicename, 'FmPhn Status', fct_name, status)
 
         except Exception as err:
 #                   No icloud data, reauthenticate (status=None)
@@ -2357,22 +2410,21 @@ class Icloud(DeviceScanner):
             device   = self.icloud_api_devices.get(devicename)
             status = device.status(DEVICE_STATUS_SET)
 
-            log_msg = ("Reauthenticated iCloud account for {}:{}:{}").\
+            log_msg = ("Reauthenticated FmPhn account for {}:{}:{}").\
                         format(self.group, devicename, self.base_zone)
             self._LOGGER_info_msg(log_msg)
             self._trace_device_attributes(
-                devicename, 'iCloud Status Reauth', fct_name, status)
+                devicename, 'FmPhn Status Reauth', fct_name, status)
 
             if status is None:
-                log_msg = ("iCloud Reauthentication Error, "
+                log_msg = ("FmPhn Reauthentication Error, "
                     "no data available for {}, Aborting").\
                     format(devicename)
                 self._LOGGER_error_msg(log_msg)
 
                 self.authenticated_time = ''
                 return ICLOUD_LOCATION_DATA_ERROR
-                #return (False, 0, 0, '', ZERO_HHMMSS, 0, 0, '', '', '', \
-                #        False, ZERO_HHMMSS, 0)
+
         try:
             location       = status['location']
             battery        = int(status.get('batteryLevel', 0) * 100)
@@ -2429,14 +2481,13 @@ class Icloud(DeviceScanner):
                     location_isold_flag, loc_attr_timestamp, altitude)
 
         except PyiCloudNoDevicesException:
-            self._LOGGER_error_msg("No iCloud Devices found")
+            self._LOGGER_error_msg("No FmPhn Devices found")
 
         except Exception as err:
             _LOGGER.exception(err)
-            self._LOGGER_error_msg("iCloud Location Data Error")
+            self._LOGGER_error_msg("FmPhn Location Data Error")
             return ICLOUD_LOCATION_DATA_ERROR
-            #return (False, 0, 0, '', ZERO_HHMMSS, 0, 0, '', '', '', \
-            #            False, ZERO_HHMMSS, 0)
+
 
 #########################################################
 #
@@ -2477,7 +2528,7 @@ class Icloud(DeviceScanner):
             self._save_event(devicename, event_msg)
 
             log_msg = "{}:{}({}) {}".format(
-                        self.friendly_name.get(devicename), self.base_zone,
+                        self.friendly_name.get(devicename), self.group,
                         self.device_type.get(devicename), event_msg)
             self._LOGGER_debug_msg(log_msg)
 
@@ -4111,7 +4162,7 @@ class Icloud(DeviceScanner):
 
             event_msg = (
                     "{}:{}({}) Created Stationary Zone").format(
-                    self.friendly_name.get(devicename), self.base_zone,
+                    self.friendly_name.get(devicename), self.group,
                     self.device_type.get(devicename))
             self._save_event_halog_info(devicename, event_msg)
 
@@ -4280,9 +4331,7 @@ class Icloud(DeviceScanner):
             if current_zone == 'near_zone':
                 info = '{} ●NearZone'.format(info)
 
-            if battery == 0:
-                info = '{} ●Battery-Unknown'.format(info, battery)
-            else:
+            if battery > 0:
                 info = '{} ●Battery-{}%'.format(info, battery)
 
             isold_cnt = self.location_isold_cnt.get(devicename)
@@ -4405,7 +4454,7 @@ class Icloud(DeviceScanner):
         self.CURRENT_MODE_FMPHN  = (mode == MODE_FMPHN or mode == MODE_ICLOUD)
         self.CURRENT_MODE_FMF_FMPHN = (mode in MODE_FMF_FMPHN)
         if (self.CURRENT_MODE_FMF_FMPHN and
-                PYICLOUD_IC3_IMPORT_SUCCESSFUL == False):
+                PYICLOUD_IC3_IMPORT_SUCCESSFUL is False):
            mode = MODE_IOSAPP1
 
         self.CURRENT_MODE_IOSAPP1 = (mode == MODE_IOSAPP1)
@@ -4551,13 +4600,14 @@ class Icloud(DeviceScanner):
         self.poor_gps_accuracy_cnt     = {}
 
         #used to calculate speed, high speed & average speed since zone exit
-        self.time_last_poll_secs            = {}
+        self.time_last_poll_secs       = {}
         self.time_zone_exit_secs       = {}
         self.dist_moved_last_zone_exit = {}
         self.last_zone_dist_home       = {}
         self.speed                     = {}
         self.speed_high                = {}
         self.speed_average             = {}
+        self.last_fmf_refresh          = 0
 
 #--------------------------------------------------------------------
     def _setup_sensor_variables(self):
@@ -4824,7 +4874,7 @@ class Icloud(DeviceScanner):
                             break
 
             for devicename in self.devicename_verified:
-                if self.devicename_verified.get(devicename) == False:
+                if self.devicename_verified.get(devicename) is False:
                     parm_email = self.fmf_devicename_email.get(devicename)
                     devicename_contact_emails[devicename] = parm_email
                     log_msg = ("Could not find friend with email {} in "
@@ -5227,6 +5277,7 @@ class Icloud(DeviceScanner):
             location_isold_flag = (age > 120)
 
             if location_isold_flag:
+                self.last_fmf_refresh = self.this_update_seconds - 120
                 self.location_isold_cnt[devicename] += 1
                 self.poll_count_ignore[devicename] += 1
             else:
@@ -5250,6 +5301,7 @@ class Icloud(DeviceScanner):
 
         if gps_accuracy > self.gps_accuracy_threshold:
             event_msg = "Poor GPS accuracy ({})".format(gps_accuracy)
+            self.last_fmf_refresh = self.this_update_seconds - 120
             self._save_event(devicename, event_msg)
             self.poor_gps_accuracy_flag[devicename] = True
             self.poor_gps_accuracy_cnt[devicename] += 1
@@ -5281,7 +5333,7 @@ class Icloud(DeviceScanner):
             self._save_event(devicename, event_msg)
             log_msg = ("{}:{}({}) Discarded, IOS data too old, Trigger={}, "
                 "TimestampTime={}, Age={}").format(
-                self.friendly_name.get(devicename), self.base_zone,
+                self.friendly_name.get(devicename), self.group,
                 self.device_type.get(devicename),
                 trigger, self._timestamp_to_time_dev(dev_timestamp, True),
                 age_str)
@@ -5672,10 +5724,10 @@ class Icloud(DeviceScanner):
                     self._save_event(devicename, event_msg)
 
                     self.waze_data_copied_from[devicename] = near_devicename
-                    log_msg=("{}:{}({}) using Waze history data from {}({}); "
+                    log_msg=("{}:{}({}) Using Waze history data from {}({}); "
                             "Distance from home {} km, travel time {} min, "
                             "distance moved {} km").format(
-                            self.friendly_name.get(devicename), self.base_zone,
+                            self.friendly_name.get(devicename), self.group,
                             self.device_type.get(devicename),
                             self.friendly_name.get(near_devicename),
                             self.device_type.get(near_devicename),
@@ -5925,7 +5977,7 @@ class Icloud(DeviceScanner):
             dev_time_hhmmssddd  = '{}.'.format(timestamp.split('T')[1])
             dev_time_hhmmss     = dev_time_hhmmssddd.split('.')[0]
 
-            if self.unit_of_measurement == 'mi' and time_24h == False:
+            if self.unit_of_measurement == 'mi' and time_24h is False:
                 dev_time_hh = int(dev_time_hhmmss[0:2])
                 if dev_time_hh > 12:
                     dev_time_hh -= 12
@@ -6109,8 +6161,9 @@ class Icloud(DeviceScanner):
         #If several iCloud groups are used, this will be called for each
         #one. Exit if this instance of iCloud is not the one handling this
         #device. But if devicename = 'reset', it is an event_log service cmd.
+        attrs  = {}
         if arg_command == 'restart':
-            if self.restart_icloud_group_inprocess_flag == False:
+            if self.restart_icloud_group_inprocess_flag is False:
                 self.restart_icloud_group_request_flag = True
 
                 attrs[ATTR_INFO] = '● ICLOUD RESTART REQUESTED ●'
@@ -6127,7 +6180,7 @@ class Icloud(DeviceScanner):
             if arg_command == 'event_log':
                 #devicename_group = arg_devicename.split("_")
                 #group_devicename
-                if arg_devicename.startswith(group+"_") == False:
+                if arg_devicename.startswith(group+"_") is False:
                 #if group != devicename_group[0]:
                     return
                 devicename = arg_devicename.replace(group+"_","",99)
@@ -6150,11 +6203,9 @@ class Icloud(DeviceScanner):
             self._save_event(devicename, "Service Call Command "
                 "handled ({})".format(arg_command))
 
-        attrs  = {}
-
         #System level commands
         if arg_command_cmd == 'restart':
-            if self.restart_icloud_group_inprocess_flag == False:
+            if self.restart_icloud_group_inprocess_flag is False:
                 self.restart_icloud_group_request_flag = True
 
                 #if mode flag was in the config file, use it otherwise
