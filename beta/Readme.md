@@ -210,7 +210,7 @@ device_tracker:
     username: gary-fmf-acct@email.com       <<< Your Apple iCloud Account ID for your FmF iCloud account
     password: gary-fmf-password
     group: family                      <<< Name of this group of tracked devices.
-    tracked_devices:                   <<< Devices to be tracked
+    track_devices:                   <<< Devices to be tracked
       - gary_iphone > gary-2fa-acct@email.com, gary.png
       - lillian_iphone > lillian-2fa-acct@email.com, lillian.png
 ```
@@ -225,7 +225,7 @@ device_tracker:
     username: gary-fmf-acct@email.com       <<< Your Apple iCloud Account ID for your FmF iCloud account
     password: gary-fmf-password
     group: family                      <<< Name of this group of tracked devices.
-    tracked_devices:                   <<< Devices to be tracked
+    track_devices:                   <<< Devices to be tracked
       - gary_iphone > gary-2fa-acct@email.com, gary.png
       - lillian_iphone > lillian-2fa-acct@email.com, lillian.png
 
@@ -235,7 +235,7 @@ device_tracker:
     password: gary-fmf-password
     group: work                        <<< Name of this group of tracked devices.
     base_zone: whse                    <<< Track from the 'whse' zone instead of 'home'
-    tracked_devices:                   <<< Devices to be tracked
+    track_devices:                   <<< Devices to be tracked
       - gary_iphone > gary-2fa-acct@email.com, gary.png
 ```
 
