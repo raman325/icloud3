@@ -2,7 +2,24 @@
 
 
 
-#### Version 1.1.0 - July 25 - Beta 6 
+#### Version 1.1.0 - Aug 29 - Beta 8
+
+- **Support for IOS App Version 2** - With this version, you can not specify the device name in the configuration parameters like you can with version 1. Instead, a number is added to the device name. The number the IOS App assigns is specified in the iCloud3 *track_devices* parameter. The number is added to the *tracked devices* attribute for the device.<br><br>For example, if the device name in General>Settings>About is `Gary-iPhone`, the icloud (and HA) device name added to *known_devices.yaml* is `gary_iphone`. The iCloud3 tracked_devices configuration parameter will be `gary_iphone` which will create the `device_tracker.gary_iphone entity`. The IOS App may/will add a number to the end of the device name and the entity it will use to provide location data to HA will be `device_tracker.gary_iphone_2` or `device_tracker.gary_iphone_3`, etc. This number (2, 3, etc.) is specified in the iCloud3 track_devices configuration parameter. iCloud3 will then monitor `device_tracker.gary_iphone` for iCloud Location Services updates and `device_tracker.gary_iphone_2` for IOS App updates. The *tracked devices* attribute will be `gary_iphone (_2)` or `gary_iphone (_3)`, etc.
+- **Revamped error retries and reporting** - Changed the way account authorization errors, no location data errors, old locations, and gps accuracy errors. Previously, if an error occurred or the data was old or inaccurate, iCloud3 would poll the device every 15-seconds. If there was a location data error, error messages would constantly be generated until the device was reauthorized successfully. iCloud3 will now poll the device on a 15-second interval 4 times. If the error still existed, it will wait 1-minute and try again. If the error still exists, it  retry after 5-minutes, then 15-minutes and finally 30-minutes. It will retry every 30-minutes until the data becomes valid or the device authorization succeeds. A side benefit is you no longer have to pause and then resume polling after putting the device into 'airplane' mode. It will automatically resume after a connection is completed.
+- The Waze maximum distance parameter specifies the distance to not use the Waze information for calculating the polling interval. The distance returned from Waze was being used to determine if the Waze data should be used or not used. Now, the calculated distance is now being used to determine if Waze should be called or not.
+- Fixed some problems decoding the tracked_devices configuration parameter.
+- Fixed a problem with the 'Event Log' custom Lovelace component handling multiple groups.
+- Added a Group, Base Zone attribute.
+- Cleaned up and consolidated code for consistency.
+- Fixed a problem with the *pyicloud_ic3.py* custom component that was generating error log entries.
+
+To be done:
+
+- Further testing with multiple base zones, default groups, multiple of instances of iCloud3, bad email addresses, invalid passwords, etc.
+
+------
+
+#### Version 1.1.0 - July 25 - Beta 7 
 
 **New Tracking Service - Find-my-Friends supports non-2fa iCloud accounts**
 iCloud3 can now track devices using the iCloud *Find-my-Friends* Location Services. iCloud3 version 1.0.x located devices using the iCloud Find-my-Phone Location service. If the account used 2-factor authentication, notifications were sent to trusted devices every half-hour or so indicating the iCloud account had been logged into. This made using this service unworkable. With *Find-my-Friends*, iCloud3 can now locate devices tied to a 2fa account (the friends) using another non-2fa account. Instructions for setting up *Find-my-Friends* is found in the iCloud3 documentation.

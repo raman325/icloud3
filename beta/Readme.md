@@ -332,7 +332,7 @@ Installation instructions and all of the documentation for HACS is found [here](
 
 **group**  
 The name of the group of devices being tracked for username/base_zone.  
-*Note:* If this isn’t specified, the name part of the username (the part before the `@` in the email address) and the base_zone name will be used.
+*Default:*  base_zone parameter (which defaults to 'home')
 
 **tracking_method**  
 Select the method to be used to track your phone or other device. iCloud3 supports three methods of tracking a device -- iCloud Find-My-Phone Location Services, iCloud Find-My-Friends Location Services and the HA IOS App version 1 and version 2 (version 2 not available yet). 
@@ -340,18 +340,48 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 *Valid values: fmf, fmphn, iosapp, iosapp1, iosapp2.     Default value: fmf*
 
 **track_devices**  (or  **track_device**)
-*(Required)*  Identifies the devices to be tracked, their associated email addresses, badge pictures, an IOS App identification number and a name that should be uses for the device's sensors.  
+*(Required)*  Identifies the devices to be tracked, their associated email addresses, badge pictures, an IOS App identification number and a name that should be uses for the device's sensors.  The parameters for the various tracking methods are shown below.
 
- *Format:* 
+    Find my Friends:
+    ----------------
+    devicename > email_address
+    devicename > email_address, badge_picture_name
+    devicename > email_address, badge_picture_name, iosapp_number, sensor_prefix_name
+    devicename > email_address, iosapp_number
+    devicename > email_address, iosapp_number, sensor_prefix_name
+    devicename > email_address, badge_picture_name, sensor_prefix_name
+    devicename > email_address, sensor_prefix_name
+    
+    Find my Phone:
+    --------------
+    devicename
+    devicename > badge_picture_name
+    devicename > badge_picture_name, sensor_prefix_name
+    devicename > iosapp_number
+    devicename > iosapp_number, sensor_prefix_name
+    devicename > sensor_prefix_name
+    
+    
+    IOS App Version 1:
+    ------------------
+    devicename
+    devicename > badge_picture_name
+    devicename > badge_picture_name, sensor_prefix_name
+    
+    IOS App Version 2:
+    ------------------
+    devicename
+    devicename > iosapp_device_tracker_number
+    devicename > badge_picture_name, iosapp_device_tracker_number
+    devicename > badge_picture_name, iosapp_device_tracker_number, sensor_prefix_name
 
- `devicename > email_address, badge_picture_name, IOS App Id Number, sensor_prefix_name`
 
-| Field              | Description/Notes                                            |
-| ------------------ | ------------------------------------------------------------ |
-| email_address      | *Required for the tracking_method: fmf*. FmF uses the "real" email address of your "friends" iCloud account to link it with the FmF account. <br><br>You can use the complete email address `(gary-2fa-acct@email.com)` or just the name part `(gary.fmf`).<br><br>Not required if you are using the Find-my-Phone (fmphn) or iosapp (iosapp#) tracking methods. (You can omit the comma placeholder) |
-| badge_picture_name | The file name containing a picture of the person normally associated with the device. See the sensor_badge section of the iCloud3 documentation for more information about the sensor_badge.<br>The file is normally in the ```config/www/``` directory (referred to as '/local/' in HA). You can use the full name ```(/local/gary.png)``` or an abbreviated name ```(gary.png)```. |
-| IOS App Id Number  | At the present time, the IOS App version 2 does not provide any means of identifying the physical device with the device being tracked. A number '_2', ' _3', etc is added to the attribute to make the attribute name unique.<br><br>This field is reserved for the device's Id number assigned by the IOS App. This field is not needed if you are using version 1. |
-| sensor_name_prefix | See the Sensor section of the documentation for a complete description of this field. (garyc in the example below) |
+| Field                         | Description/Notes                                            |
+| ----------------------------- | ------------------------------------------------------------ |
+| email_address                 | FmF uses the "real" email address of your "friends" iCloud account to link it with the FmF account, i.e., `gary-2fa-acct@email.com`.  <br><br>*Note:* This parameter is identified by the '@' character and is required for Find-my-Friends tracking method. |
+| badge_picture_name            | The file name containing a picture of the person normally associated with the device. See the sensor_badge section of the iCloud3 documentation for more information about the sensor_badge.<br>The file is normally in the ```config/www/``` directory (referred to as '/local/' in HA). You can use the full name ```(/local/gary.png)``` or an abbreviated name ```(gary.png)```.<br><br>*Note:* This parameter is identified by '.png' or '.jpg'. |
+| IOS App Id Number (version 2) | At the present time, the IOS App version 2 does not provide any means of identifying the physical device with the device being tracked. A number '_2', ' _3', etc. is added to the device_tracker entity_id to make the attribute name unique.<br><br>This field is used to specify device's Id number assigned by the IOS App version 2. This field can be omitted if you are using version 1.<br><br>*Note:* This parameter is identified since it is a number. |
+| sensor_name_prefix            | See the Sensor section of the documentation for a complete description of this field. (garyc in the example below)<br><br>*Note:* This parameter is identified since it is none of the above. |
 
   
 
@@ -359,9 +389,9 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
   Examples:
   
     - gary_iphone > gary-2fa-acct@email.com, /local/gary.png
-    - gary_iphone > gary-2fa-acct, gary.png, 1        <<< IOS App Id v2 ' _1'
-    - gary_iphone > gary-2fa-acct, gary.png,, garyc   <<< '/local/' will be added
-    - gary_iphone > ,gary.png, 1, garyc           <<< using method fmphn or iosapp, email not needed
+    - gary_iphone > gary-2fa-acct, gary.png, 2        <<< IOS App Id v2 - 'gary_iphone_2'
+    - gary_iphone > gary-2fa-acct, gary.png, garyc   <<< '/local/' will be added
+    - gary_iphone > gary.png, 2, garyc           <<< using method fmphn or iosapp, email not needed
     - gary_iphone > /local/gary.png
     - gary_iphone > gary.png                      <<< FmPhn, iosapp tracking method with badge picture
     - gary_iphone                                 <<< FmPhn tracking method without a badge picture

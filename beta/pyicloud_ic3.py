@@ -1,18 +1,18 @@
 """
 Customized version of pyicloud.py to support iCloud3  Custom Component
 
-Platform that supports importing data from the iCloud Location Services 
-and Find My Friends api routines. Modifications to pyicloud were made 
+Platform that supports importing data from the iCloud Location Services
+and Find My Friends api routines. Modifications to pyicloud were made
 by various people to include:
-    - Original pyicloud - picklepete 
+    - Original pyicloud - picklepete
                         - https://github.com/picklepete
-    - Update to 2fa     - Peter Hadley   
+    - Update to 2fa     - Peter Hadley
                         - https://github.com/PeterHedley94/pyicloud
-    - Persistant Cookies - JiaJiunn Chiou 
+    - Persistant Cookies - JiaJiunn Chiou
                         - https://github.com/chumachuma/iSync
-    - Find My Friends Update - Z Zeleznick 
+    - Find My Friends Update - Z Zeleznick
                         - https://github.com/picklepete/pyicloud/pull/160
-                        
+
 The piclkepete version used imports for the services, utilities and exceptions
 modules. These modules have been incorporated into the pyicloud-ic3 version.
 """
@@ -77,7 +77,7 @@ class PyiCloudPasswordFilter(logging.Filter):
 class PyiCloudSession(requests.Session):
     def __init__(self, service):
         self.req_no = 0
-    
+
         self.service = service
         super(PyiCloudSession, self).__init__()
 
@@ -88,19 +88,19 @@ class PyiCloudSession(requests.Session):
             callee = inspect.stack()[2]
             module = inspect.getmodule(callee[0])
             logger = logging.getLogger(module.__name__).getChild('http')
-            
+
             self.req_no+=1
-            logger.debug("_<warn>____ PyiCloudSession __a___ request beg __%s___",self.req_no)
+            logger.debug("_____ PyiCloudSession __a___ request beg __%s___",self.req_no)
             logger.debug("args=%s", args)
             logger.debug("kwargs=%s", kwargs)
-            
+
             if self.service._password_filter not in logger.filters:
                 logger.addFilter(self.service._password_filter)
 
             logger.debug("--------going to get/post-----1-----")
         except Exception as err:
             logger.exception(err)
-        try:    
+        try:
             response = super(PyiCloudSession, self).request(*args, **kwargs)
 
             logger.debug("--------back from get/post-----1-----")
@@ -109,7 +109,7 @@ class PyiCloudSession(requests.Session):
             #logger.debug("response.headers=%s", response.headers)
         except Exception as err:
             logger.exception(err)
-            
+
         try:
             content_type = response.headers.get('Content-Type', '').split(';')[0]
             json_mimetypes = ['application/json', 'text/json']
@@ -122,9 +122,9 @@ class PyiCloudSession(requests.Session):
                 #return response
                 self._raise_error(response.status_code, response.reason)
                 logger.debug("after raise error")
-                
+
             if content_type not in json_mimetypes:
-                logger.debug("_<warn>____ PyiCloudSession _____ request end.1 __%s___",self.req_no)
+                logger.debug("_____ PyiCloudSession _____ request end.1 __%s___",self.req_no)
                 self.req_no-=1
                 return response
         except Exception as err:
@@ -156,16 +156,16 @@ class PyiCloudSession(requests.Session):
                 return ("Error={}, ({})").format(code, reason)
                 #self._raise_error(code, reason)
 
-        logger.debug("_<warn>____ PyiCloudSession _____ request end.3 __%s___",self.req_no)
+        logger.debug("_____ PyiCloudSession _____ request end.3 __%s___",self.req_no)
         self.req_no-=1
-        
+
         return response
 #reason = reason or json.get('errorReason')
 #acceptable_reason = 'Missing X-APPLE-WEBAUTH-TOKEN cookie'
 #            if reason != acceptable_reason:
 #------------------------------------------------------------------
     def _raise_error(self, code, reason):
-        logger.debug("_<warn>____ PyiCloudSession _____ raise_error _____")
+        logger.debug("_____ PyiCloudSession _____ raise_error _____")
         if self.service.requires_2sa and \
                 reason == 'Missing X-APPLE-WEBAUTH-TOKEN cookie':
             raise PyiCloud2SARequiredError(response.url)
@@ -185,10 +185,10 @@ class PyiCloudSession(requests.Session):
 
         api_error = PyiCloudAPIResponseError(reason, code)
         logger.error(api_error)
-        
+
         self.session.cookies.clear()
         self.session.cookies.save()
-        
+
         return "Error=" + code, reason
         #raise(api_error)
 
@@ -209,7 +209,7 @@ class PyiCloudService(object):
             self, apple_id, password=None, cookie_directory=None, verify=True,
             client_id=None
     ):
-        logger.debug("_<warn>____ PyiCloudService ________init_______")
+        logger.debug("_____ PyiCloudService ________init_______")
         #if password is None:
         #    password = get_password_from_keyring(apple_id)
 
@@ -224,7 +224,7 @@ class PyiCloudService(object):
         self.session_token = None
 
         logger.debug("-->>>> %s",self.user)
-        
+
         self._password_filter = PyiCloudPasswordFilter(password)
         logger.addFilter(self._password_filter)
 
@@ -260,13 +260,13 @@ class PyiCloudService(object):
         self.cookiejar_path = self._get_cookiejar_path()
         self.session.cookies = cookielib.LWPCookieJar(filename=self.cookiejar_path)
         if os.path.exists(self.cookiejar_path):
-            logger.debug("_<warn>____ PyiCloudService ______ init/get_session_cookies__")
+            logger.debug("_____ PyiCloudService ______ init/get_session_cookies__")
             try:
                 self.session.cookies.load()
 
                 logger.debug("Read cookies from %s", self.cookiejar_path)
                 logger.debug("loaded_session_cookies=%s", self.session.cookies)
-                
+
             except:
                 # Most likely a pickled cookiejar from earlier versions.
                 # The cookiejar will get replaced with a valid one after
@@ -284,9 +284,9 @@ class PyiCloudService(object):
         self.clientID = self.generateClientID()
         self.setupiCloud = SetupiCloudService(self)
         self.idmsaApple = IdmsaAppleService(self)
-        
+
         self.authenticate()
-    
+
 #------------------------------------------------------------------
     def authenticate(self):
         """
@@ -294,7 +294,7 @@ class PyiCloudService(object):
         subsequent logins will not cause additional e-mails from Apple.
         """
 
-        logger.debug("_<warn>____ PyiCloudService ______ authenticate _____")
+        logger.debug("_____ PyiCloudService ______ authenticate _____")
         logger.info("Authenticating as %s", self.user['apple_id'])
 
         self.session_token = self.get_session_token()
@@ -306,7 +306,7 @@ class PyiCloudService(object):
             self.session.cookies.save()
             self.session.cookies.load()
             self.session_token = self.get_session_token()
-            if self.session_token is None:        
+            if self.session_token is None:
                 logger.error(("Error logging into iCloud account {}"). \
                     format(self.apple_id))
                 logger.error("iCloud API Authentication Failure, Aborted")
@@ -314,7 +314,7 @@ class PyiCloudService(object):
                 msg = 'Invalid username/password'
                 raise PyiCloudFailedLoginException(msg, 0)
 
-        logger.debug("_<warn>____ PyiCloudService ______ authenticate/login _____")
+        logger.debug("_____ PyiCloudService ______ authenticate/login _____")
 
         data = {
                 'accountCountryCode': self.account_country,
@@ -337,16 +337,16 @@ class PyiCloudService(object):
 
         logger.debug("dsid=%s", self.dsid)
         logger.debug("webservices=%s", self.webservices)
-        logger.debug("-----------------------")  
+        logger.debug("-----------------------")
 
         self.params.update({'dsid': self.dsid})
 
-        logger.debug("_<warn>____ PyiCloudService ______ authenticate/save cookies _____")
+        logger.debug("_____ PyiCloudService ______ authenticate/save cookies _____")
         if not os.path.exists(self._cookie_directory):
             os.mkdir(self._cookie_directory)
 
         self.session.cookies.save()
-        
+
         logger.debug("saving cookies=%s", self.session.cookies)
         logger.debug("Cookies saved to %s", self._get_cookiejar_path())
 
@@ -354,7 +354,7 @@ class PyiCloudService(object):
 
 #------------------------------------------------------------------
     def get_session_token(self):
-        logger.debug("_<warn>____ PyiCloudService ______ get_session_token _____")
+        logger.debug("_____ PyiCloudService ______ get_session_token _____")
         self.clientID = self.generateClientID()
         status, self.appleWidgetKey = \
                 self.setupiCloud.requestAppleWidgetKey(self.clientID)
@@ -362,11 +362,11 @@ class PyiCloudService(object):
         #                                                self.user['password'],
         #                                                widgetKey
         #                                                )
-        
+
         if status:
             session_token, account_country = \
                     self.idmsaApple.requestAppleSessionToken(
-                                self.user['apple_id'], 
+                                self.user['apple_id'],
                                 self.user['password'],
                                 self.appleWidgetKey)
         else:
@@ -377,17 +377,17 @@ class PyiCloudService(object):
 
 #------------------------------------------------------------------
     def generateClientID(self):
-        logger.debug("_<warn>____ PyiCloudService ______ generateClientID _____")
+        logger.debug("_____ PyiCloudService ______ generateClientID _____")
         #return str(generateClientID()).upper()
         client_id = str(generateClientID()).upper()
         logger.debug("client_id=%s", client_id)
         return client_id
-        
+
 
 #------------------------------------------------------------------
     def _get_cookiejar_path(self):
         # Get path for cookiejar file
-        logger.debug("_<warn>____ PyiCloudService ______ _get_cookiejar_path _____")
+        logger.debug("_____ PyiCloudService ______ _get_cookiejar_path _____")
         #return os.path.join(
         #    self._cookie_directory,
         #    ''.join([c for c in self.user.get('apple_id') if match(r'\w', c)])
@@ -396,10 +396,10 @@ class PyiCloudService(object):
             self._cookie_directory,
             ''.join([c for c in self.user.get('apple_id') if match(r'\w', c)])
         )
-        
+
         logger.debug("cookiejar_path=%s", cookiejar_path)
         return cookiejar_path
-        
+
 
 #------------------------------------------------------------------
     @property
@@ -414,14 +414,14 @@ class PyiCloudService(object):
         # FIXME: Implement 2FA for hsaVersion == 2
         rtn = self.data.get('hsaChallengeRequired', False) \
             and self.data['dsInfo'].get('hsaVersion', 0) >= 1
-        
+
         return rtn
-        
+
 #------------------------------------------------------------------
     @property
     def trusted_devices(self):
         """ Returns devices trusted for two-step authentication."""
-        logger.debug("_<warn>____ PyiCloudService ______ trusted_devices _____")
+        logger.debug("_____ PyiCloudService ______ trusted_devices _____")
         request = self.session.get(
             '%s/listDevices' % self._setup_endpoint,
             params=self.params
@@ -435,7 +435,7 @@ class PyiCloudService(object):
 #------------------------------------------------------------------
     def send_verification_code(self, device):
         """ Requests that a verification code is sent to the given device"""
-        logger.debug("_<warn>____ PyiCloudService ______ send_verification_code _____")
+        logger.debug("_____ PyiCloudService ______ send_verification_code _____")
         data = json.dumps(device)
         request = self.session.post(
             '%s/sendVerificationCode' % self._setup_endpoint,
@@ -451,7 +451,7 @@ class PyiCloudService(object):
 #------------------------------------------------------------------
     def validate_verification_code(self, device, code):
         """ Verifies a verification code received on a trusted device"""
-        logger.debug("_<warn>____ PyiCloudService ______ validate_verification_code _____")
+        logger.debug("_____ PyiCloudService ______ validate_verification_code _____")
         device.update({
             'verificationCode': code,
             'trustBrowser': True
@@ -483,7 +483,7 @@ class PyiCloudService(object):
     @property
     def devices(self):
         """ Return all devices."""
-        logger.debug("_<warn>____ PyiCloudService ______ devices _____")
+        logger.debug("_____ PyiCloudService ______ devices _____")
         service_root = self.webservices['findme']['url']
         logger.debug("service_root=%s", service_root)
         logger.debug("session=%s", self.session)
@@ -496,20 +496,20 @@ class PyiCloudService(object):
     def account(self):
         service_root = self.webservices['account']['url']
         return AccountService(service_root, self.session, self.params)
-        
+
 #------------------------------------------------------------------
     @property
     def friends(self):
         service_root = self.webservices['fmf']['url']
         return FindFriendsService(service_root, self.session, self.params)
-        
+
 #------------------------------------------------------------------
     '''
     @property
     def calendar(self):
         service_root = self.webservices['calendar']['url']
         return CalendarService(service_root, self.session, self.params)
-        
+
     @property
     def iphone(self):
         return self.devices[0]
@@ -591,19 +591,19 @@ class SetupiCloudService(HTTPService):
 
 #------------------------------------------------------------------
     def requestAppleWidgetKey(self, clientID):
-        logger.debug("_<warn>____ SetupiCloudService ______ requestAppleWidgetKey _____")
+        logger.debug("_____ SetupiCloudService ______ requestAppleWidgetKey _____")
         error_msg = ""
         self.session.headers.update(self.getRequestHeader())
         apple_widget_params = self.getQueryParameters(clientID)
-        
+
         logger.debug("urlKey=%s",self.urlKey)
         logger.debug("apple_widget_params=%s",apple_widget_params)
         logger.debug("self.session.headers=%s",self.session.headers)
         logger.debug(">>>get")
-        
+
         self.response = self.session.get(self.urlKey,
                                          params=apple_widget_params)
-                                                                         
+
         try:
             response_json = self.response.json()
             logger.debug("-----back from GET (requestAppleWidgetKey)")
@@ -613,14 +613,14 @@ class SetupiCloudService(HTTPService):
             logger.debug("tested response")
             if ('error' in response_json):
                 error_msg = str(response_json.get('error'))
-                
+
             if (error_msg != '' and
                     error_msg != "Missing X-APPLE-WEBAUTH-TOKEN cookie"):
                 logger.debug(">>>>> error_msg=%s",error_msg)
                 logger.error("Error requesting Apple Widget Key (%s)",
                             error_msg)
                 return False, error_msg
-            
+
             self.appleWidgetKey = self.findQyery(self.response.text,
                                                  "widgetKey=")
         except Exception as e:
@@ -634,17 +634,17 @@ class SetupiCloudService(HTTPService):
 
 #------------------------------------------------------------------
     def requestCookies(self, appleSessionToken, clientID):
-        logger.debug("_<warn>____ SetupiCloudService ______ requestCookies _____")
+        logger.debug("_____ SetupiCloudService ______ requestCookies _____")
         self.session.headers.update(self.getRequestHeader())
         login_payload = self.getLoginRequestPayload(appleSessionToken)
         login_params = self.getQueryParameters(clientID)
-        
+
         logger.debug("urlLogin=%s",self.urlLogin)
         logger.debug("login_payload=%s",login_payload)
         logger.debug("login_params=%s",login_params)
         #logger.debug("self.session.headers=%s",self.session.headers)
         logger.debug(">>>post")
-        
+
         self.response = self.session.post(self.urlLogin,
                                           login_payload,
                                           params=login_params)
@@ -658,10 +658,10 @@ class SetupiCloudService(HTTPService):
         except Exception as e:
             raise Exception("requestCookies: dsid query failed",
                             self.urlLogin, repr(e))
-        
+
         logger.debug("cookies=%s",self.cookies)
         logger.debug("dsid=%s",self.dsid)
-        
+
         return self.cookies, self.dsid
 
 #------------------------------------------------------------------
@@ -681,7 +681,7 @@ class SetupiCloudService(HTTPService):
 
 #------------------------------------------------------------------
     def getRequestHeader(self):
-        logger.debug("_<warn>____ SetupiCloudService ______ getRequestHeader _____")
+        logger.debug("_____ SetupiCloudService ______ getRequestHeader _____")
         header = {
             "Accept": "*/*",
             "Connection": "keep-alive",
@@ -690,15 +690,15 @@ class SetupiCloudService(HTTPService):
             "Origin": self.origin,
             "Referer": self.referer,
             }
-            
+
         logger.debug("header=%s",header)
         #"Content-Type": "text/plain",
-            
+
         return header
 
 #------------------------------------------------------------------
     def getQueryParameters(self, clientID):
-        logger.debug("_<warn>____ SetupiCloudService ______ getQueryParameters _____")
+        logger.debug("_____ SetupiCloudService ______ getQueryParameters _____")
         if not clientID:
             raise NameError("getQueryParameters: clientID not found")
         #return {
@@ -717,7 +717,7 @@ class SetupiCloudService(HTTPService):
 
 #------------------------------------------------------------------
     def getLoginRequestPayload(self, appleSessionToken):
-        logger.debug("_<warn>____ SetupiCloudService ______ getLoginRequestPayload _____")
+        logger.debug("_____ SetupiCloudService ______ getLoginRequestPayload _____")
         if not appleSessionToken:
             err_str = "getLoginRequestPayload: X-Apple-ID-Session-Id not found"
             raise NameError(err_str)
@@ -728,7 +728,7 @@ class SetupiCloudService(HTTPService):
         data=json({
             "dsWebAuthToken": appleSessionToken,
             "extended_login": True,
-            })    
+            })
         logger.debug("data=%s",data)
         return data
 
@@ -747,22 +747,22 @@ class IdmsaAppleService(HTTPService):
         self.scnt            = None
         self.twoSV_trust_eligible = True
         self.twoSV_trust_token    = None
-        
+
 #------------------------------------------------------------------
     def requestAppleSessionToken(self, user, password, appleWidgetKey):
-        logger.debug("_<warn>____ IdmsaAppleService ______ requestAppleSessionToken ___beg__")
+        logger.debug("_____ IdmsaAppleService ______ requestAppleSessionToken ___beg__")
         self.session.headers.update(self.getRequestHeader(appleWidgetKey))
-        
+
         url = self.urlAuth + appleWidgetKey
         user_pw_payload = self.getRequestPayload(user, password)
         logger.debug("going to sess.post >%s", url)
-        
+
         self.response = self.session.post(self.urlAuth + appleWidgetKey,
                                           user_pw_payload)
-        logger.debug("_<warn>____ IdmsaAppleService ______ requestAppleSessionToken __end___")
+        logger.debug("_____ IdmsaAppleService ______ requestAppleSessionToken __end___")
         try:
             headers = self.response.headers
-            
+
             logger.debug("Session headers=%s", headers)
             self.session_token   = headers["X-Apple-Session-Token"]
             self.session_id      = headers["X-Apple-ID-Session-Id"]
@@ -774,10 +774,10 @@ class IdmsaAppleService(HTTPService):
                 self.twoSV_trust_eligible = headers["X-Apple-TwoSV-Trust-Eligible"]
             else:
                 self.twoSV_trust_eligible = False
-        
+
         except KeyError:
             return None, None
-            
+
         except Exception as e:
             logger.debug("AppleSessionToken error")
             err_str = "requestAppleSessionToken: " + \
@@ -785,29 +785,29 @@ class IdmsaAppleService(HTTPService):
 
             raise Exception(err_str,
                             self.urlAuth, repr(e))
-                            
-        if self.twoSV_trust_eligible:                    
+
+        if self.twoSV_trust_eligible:
             self.requestApple2svToken(appleWidgetKey, user_pw_payload)
-                  
+
         return self.session_token, self.account_country
-        
+
         #'X-Apple-I-Request-ID': '13edc839-129a-455c-994a-1ee280478d8e'
         #'X-Apple-TwoSV-Trust-Eligible': 'true'
         #'X-Apple-ID-Session-Id': '982A266AF7E9B9C6D1FB948D4542C687'
         #'scnt': 'f0003baa27ac5181307b73a5573e6bd2'
         #'X-Apple-ID-Account-Country': 'USA',
-        
+
 #------------------------------------------------------------------
     def requestApple2svToken(self, appleWidgetKey, user_pw_payload):
-        logger.debug("_<warn>____ IdmsaAppleService ______ requestAppleT2svToken ___beg__")
+        logger.debug("_____ IdmsaAppleService ______ requestAppleT2svToken ___beg__")
         self.session.headers.update(self.get2svRequestHeader(appleWidgetKey))
-        
+
         self.response = self.session.post(self.url2sv, user_pw_payload)
-                                          
+
         try:
-            headers = self.response.headers           
+            headers = self.response.headers
             logger.debug("Session headers=%s", headers)
-        
+
         except Exception as e:
             err_str = "requestAppleTwoSVToken: " + \
                       "Apple Session 2SV Token query failed"
@@ -818,7 +818,7 @@ class IdmsaAppleService(HTTPService):
 
 #------------------------------------------------------------------
     def getRequestHeader(self, appleWidgetKey):
-        logger.debug("_<warn>____ IdmsaAppleService ___x___ getRequestHeader _____")
+        logger.debug("_____ IdmsaAppleService ___x___ getRequestHeader _____")
         if not appleWidgetKey:
             raise NameError("getRequestHeader: clientID not found")
         #return {
@@ -841,14 +841,14 @@ class IdmsaAppleService(HTTPService):
             }
         logger.debug("header=%s", header)
         return header
-        
+
 #------------------------------------------------------------------
     def get2svRequestHeader(self, appleWidgetKey):
-        logger.debug("_<warn>____ IdmsaAppleService ___x___ getRequestHeader _____")
+        logger.debug("_____ IdmsaAppleService ___x___ getRequestHeader _____")
         if not appleWidgetKey:
             logger.error("getRequestHeader: clientID not found")
             raise NameError("getRequestHeader: clientID not found")
-            
+
         header = {
             "Origin": self.origin,
             "Referer": self.referer,
@@ -862,13 +862,13 @@ class IdmsaAppleService(HTTPService):
             }
         logger.debug("header=%s", header)
         return header
-        #"User-Agent": self.user_ageny,   
+        #"User-Agent": self.user_ageny,
         #"Accept": "application/json, text/javascript",
         #"Content-Type": "application/json",
 
 #------------------------------------------------------------------
     def getRequestPayload(self, user, password):
-        logger.debug("_<warn>____ IdmsaAppleService ___x___ getRequestPayload _____")
+        logger.debug("_____ IdmsaAppleService ___x___ getRequestPayload _____")
         if not user:
             raise NameError("getAuthenticationRequestPayload: user not found")
         if not password:
@@ -886,7 +886,7 @@ class IdmsaAppleService(HTTPService):
             })
         logger.debug("json=%s", data)
         return data
-         
+
 #==================================================================
 class FindFriendsService(object):
     """
@@ -898,8 +898,8 @@ class FindFriendsService(object):
         callee = inspect.stack()[2]
         module = inspect.getmodule(callee[0])
         logger = logging.getLogger(module.__name__).getChild('http')
-        logger.debug("_<warn>____ FindFriendsService _____ __init__ _____")
-        
+        logger.debug("_____ FindFriendsService _____ __init__ _____")
+
         self.session = session
         self.params = params
         self._service_root = service_root
@@ -913,7 +913,7 @@ class FindFriendsService(object):
         """
         Fetches all data from Find my Friends endpoint
         """
-        logger.debug("_<warn>____ FindFriendsService ______ refresh_data _____")
+        logger.debug("_____ FindFriendsService ______ refresh_data _____")
         params = dict(self.params)
         fake_data = json.dumps({
             'clientContext': {
@@ -941,7 +941,7 @@ class FindFriendsService(object):
             self._data = self.refresh_data()
         return self._data
 
-    
+
     @property
     def locations(self):
         return self.data.get('locations')
@@ -961,7 +961,7 @@ class FindFriendsService(object):
     @property
     def contacts(self):
         return self.data.get('contactDetails')
-        
+
     @property
     def details(self):
         return self.data.get('contactDetails')
@@ -973,14 +973,14 @@ class FindMyiPhoneServiceManager(object):
     latitude and longitude.
 
     """
-        
+
     def __init__(self, service_root, session, params):
         callee = inspect.stack()[2]
         module = inspect.getmodule(callee[0])
         logger = logging.getLogger(module.__name__).getChild('http')
-        logger.debug("_<warn>____ FindMyiPhoneServiceManager _____ __init__ _____")
-        
-        
+        logger.debug("_____ FindMyiPhoneServiceManager _____ __init__ _____")
+
+
         self.session = session
         self.params = params
         self._service_root = service_root
@@ -992,8 +992,8 @@ class FindMyiPhoneServiceManager(object):
 
         self._devices = {}
         self.refresh_client()
-        
-        
+
+
 #------------------------------------------------------------------
     def refresh_client(self):
         """ Refreshes the FindMyiPhoneService endpoint,
@@ -1006,7 +1006,7 @@ class FindMyiPhoneServiceManager(object):
         logger = logging.getLogger(module.__name__).getChild('http')
         #logger = logging.getLogger(__name__)
 
-        logger.debug("_<warn>____ FindMyiPhoneServiceManager _____ refresh_client _____")
+        logger.debug("_____ FindMyiPhoneServiceManager _____ refresh_client _____")
         logger.debug("self._fmip_refresh_url=%s",self._fmip_refresh_url)
         logger.debug("self.params=%s",self.params)
 
@@ -1204,7 +1204,7 @@ class AppleDevice(object):
 
     def __repr__(self):
         return '<AppleDevice(%s)>' % str(self)
-  
+
 #==================================================================
 class PyiCloudException(Exception):
     pass
@@ -1246,4 +1246,4 @@ class NoStoredPasswordAvailable(PyiCloudException):
 class PyiCloudServiceNotActivatedErrror(PyiCloudAPIResponseError):
     pass
 
-      
+
