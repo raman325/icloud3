@@ -357,7 +357,7 @@ Sensors contain the same values as the device_tracker attributes and are created
 Example sensors are  ``` sensor.gary_iphone_distance ``` or ``` sensor.gary_iphone_zone ```. The ``` gary_iphone ``` part of the name is the sensor prefix. It can be the device's name (``` gary_iphone ```), the iCloud device name (``` gary ```) or a custom name such as ``` garyc ```. See the Sensors section [here](https://github.com/gcobb321/icloud3#sensors-created-from-device-attributes) for more information on the different types of sensors and different ways to set up the sensor prefix.An example of the format is:
 
 ```yaml
-sensor_prefix_name: name
+sensor_name_prefix: name
 
 -- or, if you are using a custom name, and the special '_badge' sensors with a picture file name
 
@@ -371,7 +371,7 @@ sensor_name_prefix:
   - gary_iphone @ garyc
   - lillian_iphone @ lillianc
   
-  - devicename @ sensor_prefix_name, badge_picture_file_name
+  - devicename @ sensor_name_prefix, badge_picture_file_name
 ```
 
 *Valid values: devicename, name, customnamevalue. Default: devicename*  
@@ -1301,7 +1301,7 @@ Sensors contain the same values as the device_tracker attributes and are created
 Example sensors are  ``` sensor.gary_iphone_distance ``` or ``` sensor.gary_iphone_zone ```. The ``` gary_iphone ``` part of the name is the sensor prefix. It can be the device's name (``` gary_iphone ```), the iCloud device name (``` gary ```) or a custom name such as ``` garyc ```. See the Sensors section [here](https://github.com/gcobb321/icloud3#sensors-created-from-device-attributes) for more information on the different types of sensors and different ways to set up the sensor prefix.An example of the format is:
 
 ```yaml
-sensor_prefix_name: name
+sensor_name_prefix: name
 
 -- or, if you are using a custom name, and the special '_badge' sensors with a picture file name
 
@@ -1315,7 +1315,7 @@ sensor_name_prefix:
   - gary_iphone @ garyc
   - lillian_iphone @ lillianc
   
-  - devicename @ sensor_prefix_name, badge_picture_file_name
+  - devicename @ sensor_name_prefix, badge_picture_file_name
 ```
 
 *Valid values: devicename, name, customnamevalue. Default: devicename*  
